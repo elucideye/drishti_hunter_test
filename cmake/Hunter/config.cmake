@@ -11,4 +11,7 @@ endif()
 hunter_config(xgboost VERSION ${HUNTER_xgboost_VERSION} CMAKE_ARGS ${XGBOOST_CMAKE_ARGS})
 
 ### Configure drishti as submodule ###
-hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti")
+set(DRISHTI_CMAKE_ARGS
+  DRISHTI_BUILD_EXAMPLES=NO
+  )
+hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti" CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})
