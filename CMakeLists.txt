@@ -56,8 +56,8 @@ install(TARGETS drishti-eye-test DESTINATION bin)
 
 # drishti/Context.hpp:23:10: fatal error: 'drishti/sensor/Sensor.h' file not found
 
-#add_executable(drishti-face-test drishti-face-test.cpp)
-#target_link_libraries(drishti-face-test PUBLIC drishti::drishti spdlog::spdlog cxxopts::cxxopts ${OpenCV_LIBS})
-#install(TARGETS drishti-face-test DESTINATION bin)
+add_executable(drishti-face-test drishti-face-test.cpp)
+target_link_libraries(drishti-face-test PUBLIC drishti::drishti spdlog::spdlog cxxopts::cxxopts ${OpenCV_LIBS})
+install(TARGETS drishti-face-test DESTINATION bin)
 
 message("DRISHTI_ASSETS_EYE_MODEL_REGRESSOR : ${DRISHTI_ASSETS_EYE_MODEL_REGRESSOR}")
