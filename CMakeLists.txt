@@ -22,6 +22,13 @@ project(drishti-hunter-test)
 hunter_add_package(drishti)
 find_package(drishti CONFIG REQUIRED)
 
+############
+### Data ###
+############
+
+hunter_add_package(drishti_assets)
+find_package(drishti_assets CONFIG REQUIRED)
+
 ###############
 ### Utility ###
 ###############
@@ -32,23 +39,25 @@ find_package(cxxopts CONFIG REQUIRED)
 hunter_add_package(spdlog) # for logging
 find_package(spdlog CONFIG REQUIRED)
 
-hunter_add_package(OpenCV) # to load images
+hunter_add_package(OpenCV) # for image IO
 find_package(OpenCV REQUIRED)
 
-############
-### Data ###
-############
-
-hunter_add_package(drishti_assets)
-find_package(drishti_assets CONFIG REQUIRED)
-
-###########################
-### drishti-hunter-test ###
-###########################
+########################
+### drishti-eye-test ###
+########################
 
 add_executable(drishti-eye-test drishti-eye-test.cpp)
 target_link_libraries(drishti-eye-test PUBLIC drishti::drishti spdlog::spdlog cxxopts::cxxopts ${OpenCV_LIBS})
-
 install(TARGETS drishti-eye-test DESTINATION bin)
+
+#########################
+### drishti-face-test ###
+#########################
+
+# drishti/Context.hpp:23:10: fatal error: 'drishti/sensor/Sensor.h' file not found
+
+#add_executable(drishti-face-test drishti-face-test.cpp)
+#target_link_libraries(drishti-face-test PUBLIC drishti::drishti spdlog::spdlog cxxopts::cxxopts ${OpenCV_LIBS})
+#install(TARGETS drishti-face-test DESTINATION bin)
 
 message("DRISHTI_ASSETS_EYE_MODEL_REGRESSOR : ${DRISHTI_ASSETS_EYE_MODEL_REGRESSOR}")
