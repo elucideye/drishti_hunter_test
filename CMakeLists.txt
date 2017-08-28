@@ -22,14 +22,33 @@ project(drishti-hunter-test)
 hunter_add_package(drishti)
 find_package(drishti CONFIG REQUIRED)
 
-hunter_add_package(cxxopts)
+###############
+### Utility ###
+###############
+
+hunter_add_package(cxxopts) # for CLI
 find_package(cxxopts CONFIG REQUIRED)
+
+hunter_add_package(spdlog) # for logging
+find_package(spdlog CONFIG REQUIRED)
+
+hunter_add_package(OpenCV) # to load images
+find_package(OpenCV REQUIRED)
+
+############
+### Data ###
+############
+
+hunter_add_package(drishti_assets)
+find_package(drishti_assets CONFIG REQUIRED)
 
 ###########################
 ### drishti-hunter-test ###
 ###########################
 
 add_executable(drishti-eye-test drishti-eye-test.cpp)
-target_link_libraries(drishti-eye-test PUBLIC drishti::drishti)
+target_link_libraries(drishti-eye-test PUBLIC drishti::drishti spdlog::spdlog cxxopts::cxxopts ${OpenCV_LIBS})
 
 install(TARGETS drishti-eye-test DESTINATION bin)
+
+message("DRISHTI_ASSETS_EYE_MODEL_REGRESSOR : ${DRISHTI_ASSETS_EYE_MODEL_REGRESSOR}")
