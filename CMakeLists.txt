@@ -9,7 +9,9 @@ HunterGate(
   URL "https://github.com/ruslo/hunter/archive/v0.19.68.tar.gz"
   SHA1 "ad0d042d8ec56a3c6a4bda1e657f1f65b494ab12"
   LOCAL  
-)
+  )
+
+option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" OFF)
 
 project(drishti-hunter-test)
 
