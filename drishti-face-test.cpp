@@ -1,14 +1,18 @@
 #include <drishti/FaceTracker.hpp>
 
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+
+#include <aglet/GLContext.h>
 
 #include <cxxopts.hpp>
 
 #include <spdlog/spdlog.h>
 
 // Need std:: extensions for android targets 
-#include <nlohmann/json.hpp> // nlohman-json
+//#include <nlohmann/json.hpp> // nlohman-json
+#include "nlohmann/json.hpp" // nlohman-json
 
 #include <fstream>
 
@@ -21,7 +25,11 @@
 // clang-format on
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name);
-static std::shared_ptr<drishti::sdk::FaceTracker> create(const cv::Size& size, int orientation, bool doThreads);
+static std::shared_ptr<drishti::sdk::FaceTracker> create(drishti::sdk::FaceTracker::Resources &factory, const cv::Size& size, int orientation);
+inline std::string cat(const std::string &a, const std::string &b)
+{
+    return a + b;
+}
 
 class FactoryLoader
 {
@@ -42,7 +50,7 @@ public:
             std::shared_ptr<std::istream> stream = std::make_shared<std::ifstream>(binding.first);
             if(!stream || !stream->good())
             {
-                throw std::runtime_error("FactoryLoader::FactoryLoader() failed to open " + bindin.first);
+                throw std::runtime_error(cat("FactoryLoader::FactoryLoader() failed to open ", binding.first));
             }
             
             (*binding.second) = stream.get();            
@@ -51,11 +59,11 @@ public:
     }        
 
     drishti::sdk::FaceTracker::Resources factory;
-
+    
 protected:
     
     std::vector<std::shared_ptr<std::istream>> streams; 
-}   
+};
 
 int gauze_main(int argc, char **argv)
 {
@@ -105,7 +113,8 @@ int gauze_main(int argc, char **argv)
     {
         logger->error("Unable to open file {}", sModels);
     }
-    nlohmann::json json(ifs);
+    nlohmann::json json;
+    ifs >> json;
     FactoryLoader factory(json, "drishti-face-test");    
 
     cv::Mat image = cv::imread(sInput, cv::IMREAD_COLOR);
@@ -120,7 +129,7 @@ int gauze_main(int argc, char **argv)
         cv::cvtColor(image, image, cv::COLOR_BGR2BGRA);
     }
 
-    auto glContex = aglet::GLContext::create(aglet::GLContext::kAuto);
+    auto glContext = aglet::GLContext::create(aglet::GLContext::kAuto);
     if (!glContext)
     {
         logger->error("Failed to create OpenGL context");
@@ -134,6 +143,8 @@ int gauze_main(int argc, char **argv)
         return 1;
     }
 
+    // Register callback:
+    
     drishti::sdk::VideoFrame frame({ image.cols, image.rows }, image.ptr(), true, 0, DFLT_TEXTURE_FORMAT);
     
     const int iterations = 10;
@@ -141,6 +152,8 @@ int gauze_main(int argc, char **argv)
     {
         (*tracker)(frame);
     }
+
+    return 0;
 }
 
 int main(int argc, char **argv)
@@ -166,17 +179,15 @@ int main(int argc, char **argv)
  * @param size  : size of input frames for detector
  * @orientation : orientation of input frames
  */
-std::shared_ptr<drishti::sdk::FaceTracker> create(const FactoryLoader &factory, const cv::Size& size, int orientation)
+std::shared_ptr<drishti::sdk::FaceTracker> create(drishti::sdk::FaceTracker::Resources &factory, const cv::Size& size, int orientation)
 {
-    const float fx = size.width;
-    const cv::Point2f p(image.cols / 2, image.rows / 2);
-    drishti::sensor::SensorModel::Intrinsic params(p, fx, size);
-    drishti::sensor::SensorModel sensor(params);
-
+    const float fx = size.width; // guess
+    drishti::sdk::Vec2f p(size.width/2, size.height/2);
+    drishti::sdk::SensorModel::Intrinsic intrinsic(p, fx, {size.width, size.height});
+    drishti::sdk::SensorModel::Extrinsic extrinsic(drishti::sdk::Matrix33f::eye());
+    drishti::sdk::SensorModel sensor(intrinsic, extrinsic);
     drishti::sdk::Context context(sensor);
-    auto tracker = std::make_shared<drishti::sdk::FaceTracker>(&context, factory);
-
-    return tracker;
+    return std::make_shared<drishti::sdk::FaceTracker>(&context, factory);
 }
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name)

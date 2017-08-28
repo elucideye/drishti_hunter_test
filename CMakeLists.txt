@@ -42,22 +42,33 @@ find_package(spdlog CONFIG REQUIRED)
 hunter_add_package(OpenCV) # for image IO
 find_package(OpenCV REQUIRED)
 
+set(base_deps
+  drishti::drishti
+  spdlog::spdlog
+  cxxopts::cxxopts
+  ${OpenCV_LIBS}
+)
+
 ########################
 ### drishti-eye-test ###
 ########################
 
 add_executable(drishti-eye-test drishti-eye-test.cpp)
-target_link_libraries(drishti-eye-test PUBLIC drishti::drishti spdlog::spdlog cxxopts::cxxopts ${OpenCV_LIBS})
+target_link_libraries(drishti-eye-test PUBLIC ${base_deps})
 install(TARGETS drishti-eye-test DESTINATION bin)
 
 #########################
 ### drishti-face-test ###
 #########################
 
-# drishti/Context.hpp:23:10: fatal error: 'drishti/sensor/Sensor.h' file not found
+hunter_add_package(nlohmann_json)
+find_package(nlohmann_json CONFIG REQUIRED)
+
+hunter_add_package(aglet)
+find_package(aglet CONFIG REQUIRED)
 
 add_executable(drishti-face-test drishti-face-test.cpp)
-target_link_libraries(drishti-face-test PUBLIC drishti::drishti spdlog::spdlog cxxopts::cxxopts ${OpenCV_LIBS})
+target_link_libraries(drishti-face-test PUBLIC ${base_deps} nlohmann_json aglet::aglet)
 install(TARGETS drishti-face-test DESTINATION bin)
 
 message("DRISHTI_ASSETS_EYE_MODEL_REGRESSOR : ${DRISHTI_ASSETS_EYE_MODEL_REGRESSOR}")
