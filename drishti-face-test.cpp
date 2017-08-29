@@ -332,7 +332,19 @@ std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const 
     drishti::sdk::SensorModel::Intrinsic intrinsic(p, fx, {size.width, size.height});
     drishti::sdk::SensorModel::Extrinsic extrinsic(drishti::sdk::Matrix33f::eye());
     drishti::sdk::SensorModel sensor(intrinsic, extrinsic);
+
     drishti::sdk::Context context(sensor);
+    context.setDoSingleFace(true);
+    context.setMinDetectionDistance(0.f);
+    context.setMaxDetectionDistance(1.f);
+    context.setFaceFinderInterval(0.f);
+    context.setAcfCalibration(0.f);
+    context.setRegressorCropScale(1.f);
+    context.setMinTrackHits(1);
+    context.setMaxTrackMisses(2);
+    context.setMinFaceSeparation(1.f);
+    context.setDoOptimizedPipeline(false); // no latency
+    
     return std::make_shared<drishti::sdk::FaceTracker>(&context, factory);
 }
 
