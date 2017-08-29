@@ -1,18 +1,20 @@
 #include <drishti/FaceTracker.hpp>
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
+#include <opencv2/core.hpp> // for cv::Mat
+#include <opencv2/imgproc.hpp> // for cv::cvtColor()
+#include <opencv2/highgui.hpp> // for cv::imread()
 
-#include <aglet/GLContext.h>
+#include <aglet/GLContext.h> // for portable opengl context
 
-#include <cxxopts.hpp>
+#include <cxxopts.hpp> // for CLI parsing
 
-#include <spdlog/spdlog.h>
+#include <spdlog/spdlog.h> // for portable loggin
 
 // Need std:: extensions for android targets 
 //#include <nlohmann/json.hpp> // nlohman-json
 #include "nlohmann/json.hpp" // nlohman-json
+
+#include <boost/filesystem.hpp> // for portable path (de)construction
 
 #include <fstream>
 
@@ -24,19 +26,32 @@
 #endif
 // clang-format on
 
+using FaceResources = drishti::sdk::FaceTracker::Resources;
+
 static std::shared_ptr<spdlog::logger> createLogger(const char *name);
-static std::shared_ptr<drishti::sdk::FaceTracker> create(drishti::sdk::FaceTracker::Resources &factory, const cv::Size& size, int orientation);
+static std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation);
 inline std::string cat(const std::string &a, const std::string &b)
 {
     return a + b;
 }
 
+namespace bfs = boost::filesystem;
+
 class FactoryLoader
 {
 public:
-    FactoryLoader(nlohmann::json &json, const std::string &name)
+    FactoryLoader(const std::string &sModels, const std::string &logger)
     {
-        factory.logger = name;        
+        std::ifstream ifs(sModels);
+        if (!ifs)
+        {
+            throw std::runtime_error(cat("FactoryLoader::FactoryLoader() failed to open ", sModels));
+        }
+
+        nlohmann::json json;
+        ifs >> json;
+        
+        factory.logger = logger; // logger name
         std::vector< std::pair<const char *, std::istream **> > bindings =
         {
             { "face_detector", &factory.sFaceDetector },
@@ -44,10 +59,13 @@ public:
             { "face_landmark_regressor", &factory.sFaceRegressor },
             { "face_detector_mean", &factory.sFaceModel }
         };
-
+        
+        // Get the directory name:
+        auto path = bfs::path(sModels);
         for(auto &binding : bindings)
         {
-            std::shared_ptr<std::istream> stream = std::make_shared<std::ifstream>(binding.first);
+            auto filename = path.parent_path() / json[binding.first].get<std::string>();
+            std::shared_ptr<std::istream> stream = std::make_shared<std::ifstream>(filename.string());
             if(!stream || !stream->good())
             {
                 throw std::runtime_error(cat("FactoryLoader::FactoryLoader() failed to open ", binding.first));
@@ -56,13 +74,102 @@ public:
             (*binding.second) = stream.get();            
             streams.push_back(stream);
         }
-    }        
+        
+        good = true;
+    }
+    
+    operator bool() const { return good; }
 
     drishti::sdk::FaceTracker::Resources factory;
     
 protected:
-    
+
+    bool good = false;
     std::vector<std::shared_ptr<std::istream>> streams; 
+};
+
+struct FaceTrackTest
+{
+    FaceTrackTest(std::shared_ptr<spdlog::logger> &logger) : m_logger(logger)
+    {
+        table =
+        {
+            this,
+            triggerFunc,
+            callbackFunc,
+            allocatorFunc
+        };
+    }
+    
+    int callback(drishti::sdk::Array<drishti_face_tracker_result_t, 64>& results)
+    {
+        m_logger->info("callback: Received results");
+        
+        for (const auto& r : results)
+        {
+            for (const auto &f : r.faceModels)
+            {
+                const auto &eye0 = f.getEye(0);
+                const auto &eye1 = f.getEye(1);
+                
+                std::cout << eye0.getIris().center[0] << " " << eye0.getIris().center[1] << std::endl;
+                std::cout << eye1.getIris().center[0] << " " << eye1.getIris().center[1] << std::endl;
+            }
+            //std::stringstream ss;
+            //ss << "/tmp/image_" << count++ << ".png";
+            //cv::imwrite(ss.str(), drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image));
+        }
+        
+        return 0;
+    }
+    
+    int trigger(const drishti::sdk::Vec3f& point, double timestamp)
+    {
+        m_logger->info("trigger: Received results: {}, {}, {} {}", point[0], point[1], point[2], timestamp);
+        return 1; // force trigger
+    }
+    
+    int allocator(const drishti_image_t& spec, drishti::sdk::Image4b& image)
+    {
+        m_logger->info("allocator: {} {}", spec.width, spec.height);
+        return 0;
+    }
+    
+    static int callbackFunc(void* context, drishti::sdk::Array<drishti_face_tracker_result_t, 64>& results)
+    {
+        if (FaceTrackTest* ft = static_cast<FaceTrackTest*>(context))
+        {
+            return ft->callback(results);
+        }
+        return -1;
+    }
+    
+    static int triggerFunc(void* context, const drishti::sdk::Vec3f& point, double timestamp)
+    {
+        if (FaceTrackTest* ft = static_cast<FaceTrackTest*>(context))
+        {
+            return ft->trigger(point, timestamp);
+        }
+        return -1;
+    }
+    
+    static int allocatorFunc(void* context, const drishti_image_t& spec, drishti::sdk::Image4b& image)
+    {
+        if (FaceTrackTest* ft = static_cast<FaceTrackTest*>(context))
+        {
+            return ft->allocator(spec, image);
+        }
+        return -1;
+    }
+    
+    void init()
+    {
+       
+    }
+    
+    drishti_face_tracker_t table;
+    
+    std::shared_ptr<spdlog::logger> m_logger;
 };
 
 int gauze_main(int argc, char **argv)
@@ -108,14 +215,7 @@ int gauze_main(int argc, char **argv)
         return 1;
     }
 
-    std::ifstream ifs(sModels);
-    if (!ifs)
-    {
-        logger->error("Unable to open file {}", sModels);
-    }
-    nlohmann::json json;
-    ifs >> json;
-    FactoryLoader factory(json, "drishti-face-test");    
+    FactoryLoader factory(sModels, "drishti-face-test");
 
     cv::Mat image = cv::imread(sInput, cv::IMREAD_COLOR);
     if (image.empty())
@@ -136,6 +236,8 @@ int gauze_main(int argc, char **argv)
         return 1;
     }
     
+    (*glContext)();
+    
     auto tracker = create(factory.factory, image.size(), 0);
     if (!tracker)
     {
@@ -143,8 +245,11 @@ int gauze_main(int argc, char **argv)
         return 1;
     }
 
-    // Register callback:
+    FaceTrackTest context(logger);
     
+    tracker->add(context.table);
+    
+    // Register callback:    
     drishti::sdk::VideoFrame frame({ image.cols, image.rows }, image.ptr(), true, 0, DFLT_TEXTURE_FORMAT);
     
     const int iterations = 10;
@@ -156,6 +261,7 @@ int gauze_main(int argc, char **argv)
     return 0;
 }
 
+#if !defined(DRISHTI_TEST_BUILD_TESTS)
 int main(int argc, char **argv)
 {
     try
@@ -170,6 +276,7 @@ int main(int argc, char **argv)
 
     return 0;
 }
+#endif
 
 /*
  * FaceFinder configuration can be achieved by modifying the input
@@ -179,7 +286,7 @@ int main(int argc, char **argv)
  * @param size  : size of input frames for detector
  * @orientation : orientation of input frames
  */
-std::shared_ptr<drishti::sdk::FaceTracker> create(drishti::sdk::FaceTracker::Resources &factory, const cv::Size& size, int orientation)
+std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation)
 {
     const float fx = size.width; // guess
     drishti::sdk::Vec2f p(size.width/2, size.height/2);
