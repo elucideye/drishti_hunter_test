@@ -134,8 +134,7 @@ struct FaceTrackTest
             draw(image, e);
         }
     }
-    
-    
+
     int callback(drishti::sdk::Array<drishti_face_tracker_result_t, 64>& results)
     {
         m_logger->info("callback: Received results");
@@ -143,7 +142,6 @@ struct FaceTrackTest
         for (const auto& r : results)
         {
             cv::Mat canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image).clone();
-            
             for (const auto &f : r.faceModels)
             {
                 draw(canvas, f);
@@ -154,7 +152,13 @@ struct FaceTrackTest
         
         return 0;
     }
-    
+
+    // Here we would typically add some critiera required to trigger a full capture
+    // capture event.  We would do this selectively so that full frames are not
+    // retrieved at each stage of processing. For example, if we want to capture a s
+    // selfie image, we might monitor face positions over time to ensure that the
+    // subject is relatively centered in the image and that there is fairly low
+    // frame-to-frame motion.
     int trigger(const drishti::sdk::Vec3f& point, double timestamp)
     {
         m_logger->info("trigger: Received results: {}, {}, {} {}", point[0], point[1], point[2], timestamp);
@@ -281,13 +285,16 @@ int gauze_main(int argc, char **argv)
     
     tracker->add(context.table);
     
-    // Register callback:    
-    drishti::sdk::VideoFrame frame({ image.cols, image.rows }, image.ptr(), true, 0, DFLT_TEXTURE_FORMAT);
-    
     const int iterations = 10;
     for (int i = 0; i < iterations; i++)
     {
+        logger->info("Frame: {}", i);
+        
+        // Register callback:
+        drishti::sdk::VideoFrame frame({ image.cols, image.rows }, image.ptr(), true, 0, DFLT_TEXTURE_FORMAT);
         (*tracker)(frame);
+        
+        cv::flip(image, image, 1);
     }
 
     return 0;
