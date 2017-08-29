@@ -6,7 +6,8 @@ CONFIG=Release
 COMMAND=(
     "--verbose "
     "--fwd "
-    "HUNTER_CONFIGURATION_TYPES=${CONFIG} "    
+    "HUNTER_CONFIGURATION_TYPES=${CONFIG} "
+    "HUNTER_KEEP_PACKAGE_SOURCES=ON "
     "DRISHTI_BUILD_BENCHMARKS=OFF "
     "DRISHTI_BUILD_TESTS=OFF "
     "DRISHTI_BUILD_INTEGRATION_TESTS=OFF "
@@ -16,4 +17,4 @@ COMMAND=(
     "--install "
 )
 
-polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --reconfig --open # --test
+polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --clear --open # --test
