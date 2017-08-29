@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TOOLCHAIN=xcode
-CONFIG=Release
+CONFIG=Debug
 
 COMMAND=(
     "--verbose "
@@ -17,4 +17,4 @@ COMMAND=(
     "--install "
 )
 
-polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --clear --open # --test
+polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --reconfig --open # --test
