@@ -111,6 +111,7 @@ int gauze_main(int argc, char **argv)
     return 0;
 }
 
+#if !defined(DRISHTI_TEST_BUILD_TESTS)
 int main(int argc, char **argv)
 {
     try
@@ -125,6 +126,7 @@ int main(int argc, char **argv)
 
     return 0;
 }
+#endif
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name)
 {
