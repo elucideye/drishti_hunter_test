@@ -109,9 +109,8 @@ struct FaceTrackTest
         {
             for (const auto &f : r.faceModels)
             {
-                const auto &eye0 = f.getEye(0);
-                const auto &eye1 = f.getEye(1);
-                
+                const auto &eye0 = f.eyes[0];
+                const auto &eye1 = f.eyes[1];
                 std::cout << eye0.getIris().center[0] << " " << eye0.getIris().center[1] << std::endl;
                 std::cout << eye1.getIris().center[0] << " " << eye1.getIris().center[1] << std::endl;
             }
