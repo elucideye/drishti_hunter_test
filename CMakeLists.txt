@@ -12,6 +12,7 @@ HunterGate(
   )
 
 option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" OFF)
+option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
 
 project(drishti-hunter-test)
 
@@ -47,7 +48,18 @@ set(base_deps
   spdlog::spdlog
   cxxopts::cxxopts
   ${OpenCV_LIBS}
-)
+  )
+
+if(DRISHTI_TEST_BUILD_TESTS)
+
+  hunter_add_packages(gauze) # for tests
+  find_package(gauze CONFIG REQUIRED)
+
+  list(APPEND base_deps gauze::gauze)
+
+  enable_testing()
+  
+endif()
 
 ########################
 ### drishti-eye-test ###
@@ -55,6 +67,9 @@ set(base_deps
 
 add_executable(drishti-eye-test drishti-eye-test.cpp)
 target_link_libraries(drishti-eye-test PUBLIC ${base_deps})
+if(DRISHTI_TEST_BUILD_TESTS)
+  target_compile_definitions(drishti-eye-test DRISHTI_TEST_BUILD_TESTS=1)
+endif()
 install(TARGETS drishti-eye-test DESTINATION bin)
 
 #########################
@@ -67,8 +82,15 @@ find_package(nlohmann_json CONFIG REQUIRED)
 hunter_add_package(aglet)
 find_package(aglet CONFIG REQUIRED)
 
+hunter_add_package(Boost COMPONENTS system filesystem)
+find_package(Boost CONFIG REQUIRED system filesystem)
+set(boost_libs Boost::system Boost::filesystem)
+
 add_executable(drishti-face-test drishti-face-test.cpp)
-target_link_libraries(drishti-face-test PUBLIC ${base_deps} nlohmann_json aglet::aglet)
+target_link_libraries(drishti-face-test PUBLIC ${base_deps} nlohmann_json aglet::aglet ${boost_libs})
+if(DRISHTI_TEST_BUILD_TESTS)
+  target_compile_definitions(drishti-face-test DRISHTI_TEST_BUILD_TESTS=1)
+endif()
 install(TARGETS drishti-face-test DESTINATION bin)
 
 message("DRISHTI_ASSETS_EYE_MODEL_REGRESSOR : ${DRISHTI_ASSETS_EYE_MODEL_REGRESSOR}")
