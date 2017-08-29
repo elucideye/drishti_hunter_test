@@ -1,4 +1,5 @@
 #include <drishti/FaceTracker.hpp>
+#include <drishti/drishti_cv.hpp>
 
 #include <opencv2/core.hpp> // for cv::Mat
 #include <opencv2/imgproc.hpp> // for cv::cvtColor()
@@ -101,22 +102,54 @@ struct FaceTrackTest
         };
     }
     
+    static void draw(cv::Mat &image, const drishti::sdk::Eye &eye)
+    {
+        auto eyelids = drishti::sdk::drishtiToCv(eye.getEyelids());
+        auto crease = drishti::sdk::drishtiToCv(eye.getCrease());
+        auto pupil = drishti::sdk::drishtiToCv(eye.getPupil());
+        auto iris = drishti::sdk::drishtiToCv(eye.getIris());
+        
+        cv::ellipse(image, iris, {0,255,0}, 1, 8);
+        cv::ellipse(image, pupil, {0,255,0}, 1, 8);
+        for (const auto &p : eyelids)
+        {
+            cv::circle(image, p, 2, {0,255,0}, -1, 8);
+        }
+        for (const auto &p : crease)
+        {
+            cv::circle(image, p, 2, {0,255,0}, -1, 8);
+        }
+    }
+    
+    static void draw(cv::Mat &image, const drishti::sdk::Face &face)
+    {
+        auto landmarks = drishti::sdk::drishtiToCv(face.landmarks);
+        for (const auto &p : landmarks)
+        {
+            cv::circle(image, p, 2, {0,255,0}, -1, 8);
+        }
+        
+        for (const auto &e : face.eyes)
+        {
+            draw(image, e);
+        }
+    }
+    
+    
     int callback(drishti::sdk::Array<drishti_face_tracker_result_t, 64>& results)
     {
         m_logger->info("callback: Received results");
         
         for (const auto& r : results)
         {
+            cv::Mat canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image).clone();
+            
             for (const auto &f : r.faceModels)
             {
-                const auto &eye0 = f.eyes[0];
-                const auto &eye1 = f.eyes[1];
-                std::cout << eye0.getIris().center[0] << " " << eye0.getIris().center[1] << std::endl;
-                std::cout << eye1.getIris().center[0] << " " << eye1.getIris().center[1] << std::endl;
+                draw(canvas, f);
             }
-            //std::stringstream ss;
-            //ss << "/tmp/image_" << count++ << ".png";
-            //cv::imwrite(ss.str(), drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image));
+            cv::imshow("paint", canvas);
+            cv::waitKey(0);
         }
         
         return 0;
