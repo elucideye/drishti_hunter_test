@@ -1,3 +1,6 @@
 [submodule "src/3rdparty/drishti"]
 	path = src/3rdparty/drishti
 	url = https://github.com/elucideye/drishti.git
+[submodule "drishti-upload"]
+	path = drishti-upload
+	url = https://github.com/elucideye/drishti-upload.git

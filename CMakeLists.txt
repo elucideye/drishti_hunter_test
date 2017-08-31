@@ -1,14 +1,31 @@
 # Copyright (c) 2017, David Hirvonen 
 # All rights reserved.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 
-### Hunter snapshot that will be used ###
+#########################
+### CMAKE_MODULE_PATH ###
+#########################
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/drishti-upload/cmake/Modules")
+
+############################
+### HunterGate and cache ###
+############################
+
+# drishti specific hunter cache pacakges:
+list(APPEND HUNTER_CACHE_SERVERS "https://github.com/elucideye/hunter-cache")
+
 include("cmake/HunterGate.cmake")
 HunterGate(
   URL "https://github.com/ruslo/hunter/archive/v0.19.85.tar.gz"
-  SHA1 "6b0a65f5bb49f09cce73d07d91af0a3e54f07835"  
-  LOCAL  
+  SHA1 "6b0a65f5bb49f09cce73d07d91af0a3e54f07835"
+
+  # Here we use drishti-upload/config.cmake (shared with drishti) to make use of the CI cache
+  # We can use LOCAL to test a more minimal out-of-the-box configuration.
+  # LOCAL  
+  FILEPATH "${CMAKE_CURRENT_LIST_DIR}/drishti-upload/config.cmake"
   )
 
 option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" OFF)
