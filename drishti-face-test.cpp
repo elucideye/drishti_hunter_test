@@ -24,6 +24,10 @@
 #include <cxxopts.hpp> // for CLI parsing
 
 #include <fstream>
+#include <istream>
+#include <sstream>
+#include <iomanip>
+
 
 // clang-format off
 #ifdef ANDROID
@@ -33,6 +37,19 @@
 #endif
 // clang-format on
 
+// https://stackoverflow.com/a/1567703
+class Line
+{
+    std::string data;
+public:
+    friend std::istream &operator>>(std::istream &is, Line &l)
+    {
+        std::getline(is, l.data);
+        return is;
+    }
+    operator std::string() const { return data; }
+};
+
 using FaceResources = drishti::sdk::FaceTracker::Resources;
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name);
@@ -40,7 +57,10 @@ static std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory,
 
 struct FaceTrackTest
 {
-    FaceTrackTest(std::shared_ptr<spdlog::logger> &logger) : m_logger(logger)
+    FaceTrackTest(std::shared_ptr<spdlog::logger> &logger, const std::string &sOutput)
+        : m_logger(logger)
+        , m_output(sOutput)
+        , m_counter(0)
     {
         table =
         {
@@ -88,15 +108,23 @@ struct FaceTrackTest
     {
         m_logger->info("callback: Received results");
         
-        for (const auto& r : results)
+        //for (const auto& r : results)
+        
+        if(results.size() > 0)
         {
-            cv::Mat canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image).clone();
-            for (const auto &f : r.faceModels)
+            const auto &r = results[0];
             {
-                draw(canvas, f);
+                cv::Mat canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image).clone();
+                for (const auto &f : r.faceModels)
+                {
+                    draw(canvas, f);
+                }
+                
+                std::stringstream ss;
+                ss << m_output << "/frame_" << std::setw(4) << std::setfill('0') << m_counter++ << ".png";
+                
+                cv::imwrite(ss.str(), canvas);
             }
-            cv::imshow("paint", canvas);
-            cv::waitKey(0);
         }
         
         return 0;
@@ -152,9 +180,12 @@ struct FaceTrackTest
        
     }
     
+
     drishti_face_tracker_t table;
-    
+
     std::shared_ptr<spdlog::logger> m_logger;
+    std::string m_output;
+    std::size_t m_counter;
 };
 
 int gauze_main(int argc, char **argv)
@@ -202,18 +233,18 @@ int gauze_main(int argc, char **argv)
 
     FaceTrackerFactoryJson factory(sModels, "drishti-face-test");
 
-    cv::Mat image = cv::imread(sInput, cv::IMREAD_COLOR);
-    if (image.empty())
+    // Create input file list (or single image)
+    std::vector<std::string> lines = { sInput };
+    if(sInput.find(".txt") != std::string::npos)
     {
-        logger->error("Unable to read image {}", sInput);
-        return 1;
+        std::ifstream ifs(sInput);
+        if(ifs)
+        {
+            lines.clear();
+            std::copy(std::istream_iterator<Line>(ifs), std::istream_iterator<Line>(), std::back_inserter(lines));
+        }
     }
-
-    if (image.channels() == 3)
-    {
-        cv::cvtColor(image, image, cv::COLOR_BGR2BGRA);
-    }
-
+    
     auto glContext = aglet::GLContext::create(aglet::GLContext::kAuto);
     if (!glContext)
     {
@@ -223,27 +254,48 @@ int gauze_main(int argc, char **argv)
     
     (*glContext)();
     
-    auto tracker = create(factory.factory, image.size(), 0);
-    if (!tracker)
-    {
-        logger->error("Failed to create face tracker");
-        return 1;
-    }
-
-    FaceTrackTest context(logger);
+    FaceTrackTest context(logger, sOutput);
     
-    tracker->add(context.table);
+    std::shared_ptr<drishti::sdk::FaceTracker> tracker;
     
-    const int iterations = 10;
-    for (int i = 0; i < iterations; i++)
+    cv::Size size;
+    for (const auto &filename : lines)
     {
-        logger->info("Frame: {}", i);
+        cv::Mat image = cv::imread(filename, cv::IMREAD_COLOR);
+        if (image.empty())
+        {
+            logger->error("Unable to read image {}", sInput);
+            continue;
+        }
+        if (image.channels() == 3)
+        {
+            cv::cvtColor(image, image, cv::COLOR_BGR2BGRA);
+        }
+        
+        if (!tracker)
+        {
+            tracker = create(factory.factory, image.size(), 0);
+            if (!tracker)
+            {
+                logger->error("Failed to create face tracker");
+                return 1;
+            }
+            
+            // Register callbacks:
+            tracker->add(context.table);
+        }
+        
+        logger->info("Frame: {}", filename);
+        
+        if(size.area() && size != image.size())
+        {
+            logger->error("Frame dimensions must be consistent: {}{}", size.width, size.height);
+            continue;
+        }
         
         // Register callback:
         drishti::sdk::VideoFrame frame({ image.cols, image.rows }, image.ptr(), true, 0, DFLT_TEXTURE_FORMAT);
         (*tracker)(frame);
-        
-        cv::flip(image, image, 1);
     }
 
     return 0;
@@ -289,8 +341,8 @@ std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const 
     context.setFaceFinderInterval(0.f);
     context.setAcfCalibration(0.f);
     context.setRegressorCropScale(1.f);
-    context.setMinTrackHits(1);
-    context.setMaxTrackMisses(2);
+    context.setMinTrackHits(0);
+    context.setMaxTrackMisses(0);
     context.setMinFaceSeparation(1.f);
     context.setDoOptimizedPipeline(false); // no latency
     
