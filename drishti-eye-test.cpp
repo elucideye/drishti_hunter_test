@@ -1,3 +1,13 @@
+/*!
+  @file   drishti-eye-test.cpp
+  @author David Hirvonen
+  @brief  Test the drishti eye tracking SDK.
+
+  \copyright Copyright 2017 Elucideye, Inc. All rights reserved.
+  \license{This project is released under the 3 Clause BSD License.}
+
+*/
+
 #include <drishti/EyeSegmenter.hpp>
 #include <drishti/EyeIO.hpp>
 #include <drishti/drishti_cv.hpp>

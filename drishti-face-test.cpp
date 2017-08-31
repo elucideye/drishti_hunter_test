@@ -1,5 +1,17 @@
+/*!
+  @file   drishti-face-test.cpp
+  @author David Hirvonen
+  @brief  Test the drishti face tracking API.
+
+  \copyright Copyright 2017 Elucideye, Inc. All rights reserved.
+  \license{This project is released under the 3 Clause BSD License.}
+
+*/
+
 #include <drishti/FaceTracker.hpp>
 #include <drishti/drishti_cv.hpp>
+
+#include "FaceTrackerFactoryJson.h"
 
 #include <opencv2/core.hpp> // for cv::Mat
 #include <opencv2/imgproc.hpp> // for cv::cvtColor()
@@ -7,15 +19,9 @@
 
 #include <aglet/GLContext.h> // for portable opengl context
 
-#include <cxxopts.hpp> // for CLI parsing
-
 #include <spdlog/spdlog.h> // for portable loggin
 
-// Need std:: extensions for android targets 
-//#include <nlohmann/json.hpp> // nlohman-json
-#include "nlohmann/json.hpp" // nlohman-json
-
-#include <boost/filesystem.hpp> // for portable path (de)construction
+#include <cxxopts.hpp> // for CLI parsing
 
 #include <fstream>
 
@@ -31,63 +37,6 @@ using FaceResources = drishti::sdk::FaceTracker::Resources;
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name);
 static std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation);
-inline std::string cat(const std::string &a, const std::string &b)
-{
-    return a + b;
-}
-
-namespace bfs = boost::filesystem;
-
-class FactoryLoader
-{
-public:
-    FactoryLoader(const std::string &sModels, const std::string &logger)
-    {
-        std::ifstream ifs(sModels);
-        if (!ifs)
-        {
-            throw std::runtime_error(cat("FactoryLoader::FactoryLoader() failed to open ", sModels));
-        }
-
-        nlohmann::json json;
-        ifs >> json;
-        
-        factory.logger = logger; // logger name
-        std::vector< std::pair<const char *, std::istream **> > bindings =
-        {
-            { "face_detector", &factory.sFaceDetector },
-            { "eye_model_regressor", &factory.sEyeRegressor },
-            { "face_landmark_regressor", &factory.sFaceRegressor },
-            { "face_detector_mean", &factory.sFaceModel }
-        };
-        
-        // Get the directory name:
-        auto path = bfs::path(sModels);
-        for(auto &binding : bindings)
-        {
-            auto filename = path.parent_path() / json[binding.first].get<std::string>();
-            std::shared_ptr<std::istream> stream = std::make_shared<std::ifstream>(filename.string());
-            if(!stream || !stream->good())
-            {
-                throw std::runtime_error(cat("FactoryLoader::FactoryLoader() failed to open ", binding.first));
-            }
-            
-            (*binding.second) = stream.get();            
-            streams.push_back(stream);
-        }
-        
-        good = true;
-    }
-    
-    operator bool() const { return good; }
-
-    drishti::sdk::FaceTracker::Resources factory;
-    
-protected:
-
-    bool good = false;
-    std::vector<std::shared_ptr<std::istream>> streams; 
-};
 
 struct FaceTrackTest
 {
@@ -251,7 +200,7 @@ int gauze_main(int argc, char **argv)
         return 1;
     }
 
-    FactoryLoader factory(sModels, "drishti-face-test");
+    FaceTrackerFactoryJson factory(sModels, "drishti-face-test");
 
     cv::Mat image = cv::imread(sInput, cv::IMREAD_COLOR);
     if (image.empty())
