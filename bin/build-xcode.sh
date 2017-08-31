@@ -1,7 +1,8 @@
 #!/bin/bash
 
 TOOLCHAIN=xcode-hid-sections
-CONFIG=MinSizeRel
+CONFIG=Debug
+#CONFIG=MinSizeRel
 
 COMMAND=(
     "--verbose "
