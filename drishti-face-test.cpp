@@ -174,12 +174,7 @@ struct FaceTrackTest
         }
         return -1;
     }
-    
-    void init()
-    {
-       
-    }
-    
+
 
     drishti_face_tracker_t table;
 
