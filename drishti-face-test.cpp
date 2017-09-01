@@ -20,6 +20,8 @@
 #include <aglet/GLContext.h> // for portable opengl context
 
 #include <spdlog/spdlog.h> // for portable loggin
+#include <spdlog/fmt/ostr.h>
+#include <errno.h> // https://www.taygeta.com/misc/nonTLS.html
 
 #include <cxxopts.hpp> // for CLI parsing
 
