@@ -136,10 +136,14 @@ struct FaceTrackTest
     // selfie image, we might monitor face positions over time to ensure that the
     // subject is relatively centered in the image and that there is fairly low
     // frame-to-frame motion.
-    int trigger(const drishti::sdk::Vec3f& point, double timestamp)
+    drishti_request_t trigger(const drishti::sdk::Vec3f& point, double timestamp)
     {
         m_logger->info("trigger: Received results: {}, {}, {} {}", point[0], point[1], point[2], timestamp);
-        return 1; // force trigger
+        drishti_request_t request;
+        request.n = 3;
+        request.getImage = true;
+        request.getTexture = true;
+        return request;
     }
     
     int allocator(const drishti_image_t& spec, drishti::sdk::Image4b& image)
@@ -157,13 +161,15 @@ struct FaceTrackTest
         return -1;
     }
     
-    static int triggerFunc(void* context, const drishti::sdk::Vec3f& point, double timestamp)
+    static drishti_request_t triggerFunc(void* context, const drishti::sdk::Vec3f& point, double timestamp)
     {
+        drishti_request_t request;
+        request.n = 0;
         if (FaceTrackTest* ft = static_cast<FaceTrackTest*>(context))
         {
             return ft->trigger(point, timestamp);
         }
-        return -1;
+        return request;
     }
     
     static int allocatorFunc(void* context, const drishti_image_t& spec, drishti::sdk::Image4b& image)
@@ -336,8 +342,8 @@ std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const 
     context.setFaceFinderInterval(0.f);
     context.setAcfCalibration(0.f);
     context.setRegressorCropScale(1.f);
-    context.setMinTrackHits(0);
-    context.setMaxTrackMisses(0);
+    context.setMinTrackHits(1);
+    context.setMaxTrackMisses(1);
     context.setMinFaceSeparation(1.f);
     context.setDoOptimizedPipeline(false); // no latency
     
