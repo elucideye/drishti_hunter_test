@@ -114,7 +114,7 @@ struct FaceTrackTest
         {
             const auto &r = results[0];
             {
-                cv::Mat canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image).clone();
+                cv::Mat canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image.image).clone();
                 for (const auto &f : r.faceModels)
                 {
                     draw(canvas, f);
