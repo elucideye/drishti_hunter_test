@@ -13,9 +13,8 @@
 #include <drishti/drishti_cv.hpp>
 
 // Need std:: extensions for android targets 
-//#include <nlohmann/json.hpp> // nlohman-json
-
-#include "nlohmann/json.hpp" // nlohman-json
+#include "drishti_stdlib_string.h" // android gcc workaround
+#include <nlohmann/json.hpp> // nlohman-json
 
 #include <boost/filesystem.hpp> // for portable path (de)construction
 
