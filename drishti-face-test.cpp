@@ -11,6 +11,9 @@
 #include <drishti/FaceTracker.hpp>
 #include <drishti/drishti_cv.hpp>
 
+#include <spdlog/spdlog.h> // for portable loggin
+#include <spdlog/fmt/ostr.h>
+
 #include "FaceTrackerFactoryJson.h"
 
 #include <opencv2/core.hpp> // for cv::Mat
@@ -18,10 +21,6 @@
 #include <opencv2/highgui.hpp> // for cv::imread()
 
 #include <aglet/GLContext.h> // for portable opengl context
-
-#include <spdlog/spdlog.h> // for portable loggin
-#include <spdlog/fmt/ostr.h>
-#include <errno.h> // https://www.taygeta.com/misc/nonTLS.html
 
 #include <cxxopts.hpp> // for CLI parsing
 
