@@ -33,6 +33,11 @@ option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
 
 project(drishti-hunter-test)
 
+if(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+  set(CMAKE_POLICY_DEFAULT_CMP0069 NEW) # for 3rd parties added by add_subdirectory
+  cmake_policy(SET CMP0069 NEW)
+endif()
+
 string(COMPARE EQUAL "${CMAKE_SYSTEM_NAME}" "Linux" is_linux)
 
 # Add this OpenMP block for toolchain compatibility with drishti libraries
