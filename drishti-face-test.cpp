@@ -11,7 +11,7 @@
 #include <drishti/FaceTracker.hpp>
 #include <drishti/drishti_cv.hpp>
 
-#define USE_SPDLOG 1
+#define USE_SPDLOG 0
 
 #if USE_SPDLOG
 #  include <spdlog/spdlog.h> // for portable loggin
