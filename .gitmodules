@@ -4,3 +4,6 @@
 [submodule "drishti-upload"]
 	path = drishti-upload
 	url = https://github.com/elucideye/drishti-upload.git
+[submodule "src/3rdparty/spdlog"]
+	path = src/3rdparty/spdlog
+	url = https://github.com/headupinclouds/spdlog.git
