@@ -12,8 +12,11 @@
 
 #include <drishti/drishti_cv.hpp>
 
-// Need std:: extensions for android targets 
-#include "drishti_stdlib_string.h" // android gcc workaround
+// Need std:: extensions for android targets
+#if defined(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
+#  include "drishti_stdlib_string.h"
+#endif
+
 #include <nlohmann/json.hpp> // nlohman-json
 
 #include <boost/filesystem.hpp> // for portable path (de)construction

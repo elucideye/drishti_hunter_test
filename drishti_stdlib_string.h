@@ -8,18 +8,18 @@
 
 */
 
-#ifndef __drishti_core_drishti_stdlib_string_h__
-#define __drishti_core_drishti_stdlib_string_h__
-
-#if ANDROID
-
-#include "drishti/core/drishti_core.h"
+#ifndef __drishti_stdlib_string_h__
+#define __drishti_stdlib_string_h__
 
 #include <string>
 #include <sstream>
 #include <cstdlib>
 
-DRISHTI_BEGIN_NAMESPACE(std)
+// Use namespace macros for readability and cleaner indentation
+#define DRISHTI_TEST_BEGIN_NAMESPACE(x) namespace x {
+#define DRISHTI_TEST_END_NAMESPACE(x) }
+
+DRISHTI_TEST_BEGIN_NAMESPACE(std)
 
 template <typename T>
 inline std::string to_string(T value)
@@ -94,9 +94,8 @@ inline float strtof(const char *str, char **str_end)
     return ::strtof(str, str_end);
 }
 
-DRISHTI_END_NAMESPACE(std)
+DRISHTI_TEST_END_NAMESPACE(std)
 
 #include <cerrno>
-#endif
 
-#endif // __drishti_core_drishti_stdlib_string_h__
+#endif // __drishti_stdlib_string_h__

@@ -29,7 +29,6 @@
 #include <sstream>
 #include <iomanip>
 
-
 // clang-format off
 #ifdef ANDROID
 #  define DFLT_TEXTURE_FORMAT GL_RGBA

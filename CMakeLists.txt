@@ -75,14 +75,14 @@ find_package(OpenCV REQUIRED)
 hunter_add_package(cxxopts) # for CLI
 find_package(cxxopts CONFIG REQUIRED)
 
-#hunter_add_package(spdlog) # for logging
-#find_package(spdlog CONFIG REQUIRED)
+hunter_add_package(spdlog) # for logging
+find_package(spdlog CONFIG REQUIRED)
 
 set(base_deps
   drishti::drishti
   cxxopts::cxxopts
   ${OpenCV_LIBS}
-#  spdlog::spdlog  
+  spdlog::spdlog  
   )
 
 if(DRISHTI_TEST_BUILD_TESTS)
@@ -97,13 +97,31 @@ if(DRISHTI_TEST_BUILD_TESTS)
 endif()
 
 ########################
+#### std::to_string ####
+########################
+
+# Workaround for incomplete C++11 implementations (gcc android)
+try_compile(DRISHTI_HUNTER_TEST_HAVE_TO_STRING
+  "${CMAKE_BINARY_DIR}/compile_tests"
+  "${PROJECT_SOURCE_DIR}/cmake/to_string.cpp"
+  )
+if(DRISHTI_HUNTER_TEST_HAVE_TO_STRING)
+  set(DRISHTI_HUNTER_TEST_ADD_TO_STRING OFF)
+else()
+  set(DRISHTI_HUNTER_TEST_ADD_TO_STRING ON)
+endif()
+
+########################
 ### drishti-eye-test ###
 ########################
 
 add_executable(drishti-eye-test drishti-eye-test.cpp)
 target_link_libraries(drishti-eye-test PUBLIC ${base_deps})
 if(DRISHTI_TEST_BUILD_TESTS)
-  target_compile_definitions(drishti-eye-test DRISHTI_TEST_BUILD_TESTS=1)
+  target_compile_definitions(drishti-eye-test PUBLIC DRISHTI_TEST_BUILD_TESTS=1)
+endif()
+if(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
+  target_compile_definitions(drishti-eye-test PUBLIC DRISHTI_HUNTER_TEST_ADD_TO_STRING=1)
 endif()
 install(TARGETS drishti-eye-test DESTINATION bin)
 
@@ -124,7 +142,10 @@ set(boost_libs Boost::system Boost::filesystem)
 add_executable(drishti-face-test drishti-face-test.cpp FaceTrackerFactoryJson.h FaceTrackerFactoryJson.cpp)
 target_link_libraries(drishti-face-test PUBLIC ${base_deps} nlohmann_json aglet::aglet ${boost_libs})
 if(DRISHTI_TEST_BUILD_TESTS)
-  target_compile_definitions(drishti-face-test DRISHTI_TEST_BUILD_TESTS=1)
+  target_compile_definitions(drishti-face-test PUBLIC DRISHTI_TEST_BUILD_TESTS=1)
+endif()
+if(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
+  target_compile_definitions(drishti-face-test PUBLIC DRISHTI_HUNTER_TEST_ADD_TO_STRING=1)
 endif()
 install(TARGETS drishti-face-test DESTINATION bin)
 
