@@ -11,8 +11,40 @@
 #include <drishti/FaceTracker.hpp>
 #include <drishti/drishti_cv.hpp>
 
-#include <spdlog/spdlog.h> // for portable loggin
-#include <spdlog/fmt/ostr.h>
+#define USE_SPDLOG 0
+
+#if USE_SPDLOG
+#  include <spdlog/spdlog.h> // for portable loggin
+#  include <spdlog/fmt/ostr.h>
+#else
+namespace spdlog 
+{
+    static void set_pattern(const char *) {}
+    struct logger
+    {
+        template<class It> logger(const std::string& name, const It& begin, const It& end) {}
+        template <typename Arg1, typename... Args> void info(const char* fmt, const Arg1&, const Args&... args) {}
+        template <typename Arg1, typename... Args> void error(const char* fmt, const Arg1&, const Args&... args) {}
+
+        void info(const char *fmt) {}
+        void error(const char *fmt) {}
+    };
+
+    void register_logger(std::shared_ptr<logger> logger) {}
+
+
+
+    namespace sinks
+    {
+        struct sink {};
+        template <class Mutex> class stdout_sink : public sink {};
+        typedef stdout_sink<std::mutex> stdout_sink_mt;
+    }
+
+    using sink_ptr = std::shared_ptr < sinks::sink >;
+
+}
+#endif
 
 #include "FaceTrackerFactoryJson.h"
 
