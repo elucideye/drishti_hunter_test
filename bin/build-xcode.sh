@@ -19,6 +19,7 @@ COMMAND=(
 )
 
 #polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --open --nobuild
+#polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --reconfig --open
 
-polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --reconfig --open
+polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --clear --open
 

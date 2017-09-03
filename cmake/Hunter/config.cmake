@@ -1,5 +1,7 @@
-# Add hunter_config(spdlog ...) here to override configuration from include call below
-hunter_config(spdlog GIT_SUBMODULE "src/3rdparty/spdlog" CMAKE_ARGS SPDLOG_NO_THREAD_LOCAL=1)
+# If ${WORKING_CONFIG} is set to a valid path, then we will use that as an initial
+# basis for a working set of hunter package configurations (i.e., hunter_config(...))
+# by a cmake include() and we can augment those definitions below, initially we do this
+# just for the drishti submodule.
 
 if (EXISTS ${WORKING_CONFIG})
 
