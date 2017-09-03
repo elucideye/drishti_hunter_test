@@ -64,20 +64,20 @@ find_package(drishti_assets CONFIG REQUIRED)
 ### Utility ###
 ###############
 
-hunter_add_package(cxxopts) # for CLI
-find_package(cxxopts CONFIG REQUIRED)
-
-hunter_add_package(spdlog) # for logging
-find_package(spdlog CONFIG REQUIRED)
-
 hunter_add_package(OpenCV) # for image IO
 find_package(OpenCV REQUIRED)
 
+hunter_add_package(cxxopts) # for CLI
+find_package(cxxopts CONFIG REQUIRED)
+
+#hunter_add_package(spdlog) # for logging
+#find_package(spdlog CONFIG REQUIRED)
+
 set(base_deps
   drishti::drishti
-  spdlog::spdlog
   cxxopts::cxxopts
   ${OpenCV_LIBS}
+#  spdlog::spdlog  
   )
 
 if(DRISHTI_TEST_BUILD_TESTS)

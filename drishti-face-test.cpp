@@ -17,6 +17,8 @@
 #  include <spdlog/spdlog.h> // for portable loggin
 #  include <spdlog/fmt/ostr.h>
 #else
+#  include <mutex>
+#  include <memory>
 namespace spdlog 
 {
     static void set_pattern(const char *) {}
@@ -402,6 +404,8 @@ std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const 
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name)
 {
+
+#if USE_SPDLOG    
     std::vector<spdlog::sink_ptr> sinks;
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_mt>());
 #if defined(__ANDROID__)
@@ -411,4 +415,8 @@ static std::shared_ptr<spdlog::logger> createLogger(const char *name)
     spdlog::register_logger(logger);
     spdlog::set_pattern("[%H:%M:%S.%e | thread:%t | %n | %l]: %v");
     return logger;
+
+#else
+    return std::make_shared<spdlog::logger>();
+#endif
 }
