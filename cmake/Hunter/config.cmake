@@ -1,3 +1,6 @@
+# Add hunter_config(spdlog ...) here to override configuration from include call below
+hunter_config(spdlog GIT_SUBMODULE "src/3rdparty/spdlog" CMAKE_ARGS SPDLOG_NO_THREAD_LOCAL=1)
+
 if (EXISTS ${WORKING_CONFIG})
 
   message("Has working config")
@@ -20,7 +23,5 @@ else()
 endif()
 
 ### Configure drishti as submodule ###
-set(DRISHTI_CMAKE_ARGS
-  DRISHTI_BUILD_EXAMPLES=NO
-  )
+set(DRISHTI_CMAKE_ARGS DRISHTI_BUILD_EXAMPLES=NO)
 hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti" CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})

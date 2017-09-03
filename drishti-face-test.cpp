@@ -11,59 +11,8 @@
 #include <drishti/FaceTracker.hpp>
 #include <drishti/drishti_cv.hpp>
 
-#define USE_SPDLOG 0
-
-#if USE_SPDLOG
-#  include <spdlog/spdlog.h> // for portable loggin
-#  include <spdlog/fmt/ostr.h>
-#else
-#  include <mutex>
-#  include <memory>
-namespace spdlog 
-{
-    static void set_pattern(const char *) {}
-    struct logger
-    {
-        template<class It> logger(const std::string& name, const It& begin, const It& end) {}
-        template <typename Arg1, typename... Args> void info(const char* fmt, const Arg1&, const Args&... args) {}
-        template <typename Arg1, typename... Args> void error(const char* fmt, const Arg1&, const Args&... args) {}
-
-        void info(const char *fmt) {}
-        void error(const char *fmt) {}
-    };
-
-    void register_logger(std::shared_ptr<logger> logger) {}
-
-    namespace sinks
-    {
-        struct sink {};
-        template <class Mutex> class stdout_sink : public sink {};
-        typedef stdout_sink<std::mutex> stdout_sink_mt;
-    }
-
-    using sink_ptr = std::shared_ptr < sinks::sink >;
-}
-#endif
-
-//Return current thread id as size_t                                                                                                                 
-//It exists because the std::this_thread::get_id() is much slower(espcially under VS 2013) 
-// inline size_t _thread_id()
-// {
-// #ifdef _WIN32
-//     return  static_cast<size_t>(::GetCurrentThreadId());
-// #elif __linux__
-// # if defined(__ANDROID__) && defined(__ANDROID_API__) && (__ANDROID_API__ < 21)
-// #  define SYS_gettid __NR_gettid
-// # endif
-//     return  static_cast<size_t>(syscall(SYS_gettid));
-// #elif __FreeBSD__
-//     long tid;
-//     thr_self(&tid);
-//     return static_cast<size_t>(tid);
-// #else //Default to standard C++11 (OSX and other Unix)
-//     return static_cast<size_t>(std::hash<std::thread::id>()(std::this_thread::get_id()));
-// #endif
-// }
+#include <spdlog/spdlog.h> // for portable loggin
+#include <spdlog/fmt/ostr.h>
 
 #include "FaceTrackerFactoryJson.h"
 
@@ -404,8 +353,6 @@ std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const 
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name)
 {
-
-#if USE_SPDLOG    
     std::vector<spdlog::sink_ptr> sinks;
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_mt>());
 #if defined(__ANDROID__)
@@ -415,8 +362,4 @@ static std::shared_ptr<spdlog::logger> createLogger(const char *name)
     spdlog::register_logger(logger);
     spdlog::set_pattern("[%H:%M:%S.%e | thread:%t | %n | %l]: %v");
     return logger;
-
-#else
-    return std::make_shared<spdlog::logger>();
-#endif
 }
