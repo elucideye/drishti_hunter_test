@@ -18,4 +18,7 @@ COMMAND=(
     "--install "
 )
 
-polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --reconfig --open # --test
+#polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --open --nobuild
+
+polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --reconfig --open
+
