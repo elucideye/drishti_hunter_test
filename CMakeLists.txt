@@ -40,17 +40,6 @@ endif()
 
 string(COMPARE EQUAL "${CMAKE_SYSTEM_NAME}" "Linux" is_linux)
 
-# Add this OpenMP block for toolchain compatibility with drishti libraries
-if(NOT XCODE AND NOT MSVC) # We'll never have openmp on ios, and this test is really slow
-  find_package( OpenMP )
-  if(OPENMP_FOUND)
-    message("OPENMP FOUND")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-  endif()
-endif()
-
 ###############
 ### drishti ###
 ###############
