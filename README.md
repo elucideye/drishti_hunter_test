@@ -11,5 +11,6 @@
 [travis_status]: https://travis-ci.com/elucideye/drishti_hunter_test.svg?token=2fYtPs8x4ziLvxfp2emx&branch=master
 [travis_builds]: https://travis-ci.com/elucideye/drishti_hunter_test
 
-[appveyor_status]: https://ci.appveyor.com/api/projects/status/078pf6u9f08q6d8v/branch/master?svg=true
-[appveyor_builds]: https://ci.appveyor.com/project/elucideye/drishti-hunter-test/branch/master
+[appveyor_status]: https://ci.appveyor.com/api/projects/status/2nx0o9uahmsvc617/branch/master?svg=true
+[appveyor_builds]: https://ci.appveyor.com/project/elucideye/drishti-hunter-test-05ggm/branch/master
+
