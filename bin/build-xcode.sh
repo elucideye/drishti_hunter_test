@@ -14,12 +14,11 @@ COMMAND=(
     "DRISHTI_BUILD_INTEGRATION_TESTS=OFF "
     "DRISHTI_BUILD_SHARED_SDK=OFF "    
     "--config ${CONFIG} "
+    "--verbose "
     "--jobs 8 "
     "--install "
 )
 
-#polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --open --nobuild
-#polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --reconfig --open
+polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} ${*}
 
-polly.py --toolchain ${TOOLCHAIN} ${COMMAND[@]} --verbose --clear --open
 
