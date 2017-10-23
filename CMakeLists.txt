@@ -15,18 +15,24 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/drishti-upload/cmake/Mo
 ############################
 
 # drishti specific hunter cache pacakges:
-list(APPEND HUNTER_CACHE_SERVERS "https://github.com/elucideye/hunter-cache")
+set(
+    HUNTER_CACHE_SERVERS
+    "https://github.com/elucideye/hunter-cache"
+    CACHE
+    STRING
+    "Hunter cache servers"
+)
 
 set(WORKING_CONFIG "${CMAKE_CURRENT_LIST_DIR}/drishti-upload/config.cmake")
-
 option(DRISHTI_UPLOAD_IGNORE_SUBMODULES "Ignore submodules in drishti-upload" YES)
+option(DRISHTI_AS_SUBMODULE "Include drishti as a submodule" NO)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL "https://github.com/ruslo/hunter/archive/v0.19.85.tar.gz"
-  SHA1 "6b0a65f5bb49f09cce73d07d91af0a3e54f07835"
-  LOCAL  
-  )
+    URL "https://github.com/ruslo/hunter/archive/v0.19.131.tar.gz"
+    SHA1 "bc0eec34712af8854085c2dc6a90b78df17a9743"
+    LOCAL # Note config.cmake includes ${WORKING_CONFIG}
+)
 
 option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" OFF)
 option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
@@ -100,42 +106,6 @@ else()
   set(DRISHTI_HUNTER_TEST_ADD_TO_STRING ON)
 endif()
 
-########################
-### drishti-eye-test ###
-########################
-
-add_executable(drishti-eye-test drishti-eye-test.cpp)
-target_link_libraries(drishti-eye-test PUBLIC ${base_deps})
-if(DRISHTI_TEST_BUILD_TESTS)
-  target_compile_definitions(drishti-eye-test PUBLIC DRISHTI_TEST_BUILD_TESTS=1)
-endif()
-if(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
-  target_compile_definitions(drishti-eye-test PUBLIC DRISHTI_HUNTER_TEST_ADD_TO_STRING=1)
-endif()
-install(TARGETS drishti-eye-test DESTINATION bin)
-
-#########################
-### drishti-face-test ###
-#########################
-
-hunter_add_package(nlohmann_json)
-find_package(nlohmann_json CONFIG REQUIRED)
-
-hunter_add_package(aglet)
-find_package(aglet CONFIG REQUIRED)
-
-hunter_add_package(Boost COMPONENTS system filesystem)
-find_package(Boost CONFIG REQUIRED system filesystem)
-set(boost_libs Boost::system Boost::filesystem)
-
-add_executable(drishti-face-test drishti-face-test.cpp FaceTrackerFactoryJson.h FaceTrackerFactoryJson.cpp)
-target_link_libraries(drishti-face-test PUBLIC ${base_deps} nlohmann_json aglet::aglet ${boost_libs})
-if(DRISHTI_TEST_BUILD_TESTS)
-  target_compile_definitions(drishti-face-test PUBLIC DRISHTI_TEST_BUILD_TESTS=1)
-endif()
-if(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
-  target_compile_definitions(drishti-face-test PUBLIC DRISHTI_HUNTER_TEST_ADD_TO_STRING=1)
-endif()
-install(TARGETS drishti-face-test DESTINATION bin)
+add_subdirectory(src)
 
 message("DRISHTI_ASSETS_EYE_MODEL_REGRESSOR : ${DRISHTI_ASSETS_EYE_MODEL_REGRESSOR}")

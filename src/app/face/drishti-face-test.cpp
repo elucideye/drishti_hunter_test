@@ -55,6 +55,7 @@ using FaceResources = drishti::sdk::FaceTracker::Resources;
 static std::shared_ptr<spdlog::logger> createLogger(const char *name);
 static std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation);
 
+// See: https://github.com/elucideye/drishti/blob/master/src/lib/drishti/drishti/ut/test-FaceTracker.cpp
 struct FaceTrackTest
 {
     FaceTrackTest(std::shared_ptr<spdlog::logger> &logger, const std::string &sOutput)
@@ -108,8 +109,6 @@ struct FaceTrackTest
     {
         m_logger->info("callback: Received results");
         
-        //for (const auto& r : results)
-        
         if(results.size() > 0)
         {
             const auto &r = results[0];
@@ -136,14 +135,12 @@ struct FaceTrackTest
     // selfie image, we might monitor face positions over time to ensure that the
     // subject is relatively centered in the image and that there is fairly low
     // frame-to-frame motion.
-    drishti_request_t trigger(const drishti::sdk::Vec3f& point, double timestamp)
+    drishti_request_t trigger(const drishti_face_tracker_result_t& faces, double timestamp)
     {
-        m_logger->info("trigger: Received results: {}, {}, {} {}", point[0], point[1], point[2], timestamp);
-        drishti_request_t request;
-        request.n = 3;
-        request.getImage = true;
-        request.getTexture = true;
-        return request;
+        m_logger->info("trigger: Received results at time {}}", timestamp);
+        // if(some_condition_is_true(faces)) {
+        return { 3, true, true }; // request last 3 images and textures
+        // }
     }
     
     int allocator(const drishti_image_t& spec, drishti::sdk::Image4b& image)
@@ -161,15 +158,13 @@ struct FaceTrackTest
         return -1;
     }
     
-    static drishti_request_t triggerFunc(void* context, const drishti::sdk::Vec3f& point, double timestamp)
+    static drishti_request_t triggerFunc(void* context, const drishti_face_tracker_result_t& faces, double timestamp)
     {
-        drishti_request_t request;
-        request.n = 0;
         if (FaceTrackTest* ft = static_cast<FaceTrackTest*>(context))
         {
-            return ft->trigger(point, timestamp);
+            return ft->trigger(faces, timestamp);
         }
-        return request;
+        return { 0, false, false };
     }
     
     static int allocatorFunc(void* context, const drishti_image_t& spec, drishti::sdk::Image4b& image)
@@ -180,7 +175,6 @@ struct FaceTrackTest
         }
         return -1;
     }
-
 
     drishti_face_tracker_t table;
 
