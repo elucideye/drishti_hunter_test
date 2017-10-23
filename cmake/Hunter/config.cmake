@@ -5,7 +5,6 @@
 
 if (EXISTS ${WORKING_CONFIG})
 
-  message("Has working config")
   include(${WORKING_CONFIG}) # i.e., ${CMAKE_CURRENT_LIST_DIR}/drishti-upload/config.cmake
   
 else()
@@ -25,5 +24,11 @@ else()
 endif()
 
 ### Configure drishti as submodule ###
+
 set(DRISHTI_CMAKE_ARGS DRISHTI_BUILD_EXAMPLES=NO)
-hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti" CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})
+
+if(DRISHTI_AS_SUBMODULE)
+  hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti" CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})
+else()
+  hunter_config(drishti VERSION ${HUNTER_drishti_VERSION} CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})
+endif()
