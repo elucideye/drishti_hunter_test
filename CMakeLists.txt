@@ -1,14 +1,7 @@
-# Copyright (c) 2017, David Hirvonen 
+# Copyright (c) 2017, David Hirvonen
 # All rights reserved.
 
-cmake_minimum_required(VERSION 3.3)
-
-#########################
-### CMAKE_MODULE_PATH ###
-#########################
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/drishti-upload/cmake/Modules")
+cmake_minimum_required(VERSION 3.9)
 
 ############################
 ### HunterGate and cache ###
@@ -38,13 +31,6 @@ option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" OFF)
 option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
 
 project(drishti-hunter-test)
-
-if(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-  set(CMAKE_POLICY_DEFAULT_CMP0069 NEW) # for 3rd parties added by add_subdirectory
-  cmake_policy(SET CMP0069 NEW)
-endif()
-
-string(COMPARE EQUAL "${CMAKE_SYSTEM_NAME}" "Linux" is_linux)
 
 ###############
 ### drishti ###
@@ -77,18 +63,18 @@ set(base_deps
   drishti::drishti
   cxxopts::cxxopts
   ${OpenCV_LIBS}
-  spdlog::spdlog  
+  spdlog::spdlog
   )
 
 if(DRISHTI_TEST_BUILD_TESTS)
 
-  hunter_add_packages(gauze) # for tests
+  hunter_add_package(gauze) # for tests
   find_package(gauze CONFIG REQUIRED)
 
   list(APPEND base_deps gauze::gauze)
 
   enable_testing()
-  
+
 endif()
 
 ########################
