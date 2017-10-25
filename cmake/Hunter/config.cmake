@@ -19,3 +19,9 @@ if(DRISHTI_AS_SUBMODULE)
 else()
   hunter_config(drishti VERSION ${HUNTER_drishti_VERSION} CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})
 endif()
+
+# Workaround from:
+# * https://github.com/ruslo/hunter/commit/08d25c51e8fa3f3fcfa73f655fe3a7d85d1b4109
+if(ANDROID)
+  hunter_config(dlib VERSION 19.2-p1)
+endif()
