@@ -18,7 +18,7 @@ HunterGate(
     LOCAL # Note config.cmake includes ${WORKING_CONFIG}
 )
 
-option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" OFF)
+option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" ON)
 option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
 
 project(drishti-hunter-test)
