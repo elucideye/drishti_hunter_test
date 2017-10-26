@@ -57,8 +57,7 @@ matrix:
 
     - os: osx
       osx_image: xcode9
-      env: CONFIG=MinSizeRel TOOLCHAIN=ios-nocodesign-11-1-arm64-dep-9-0-device-libcxx-hid-sections INSTALL=--install
-
+      env: CONFIG=MinSizeRel TOOLCHAIN=ios-nocodesign-11-0-arm64-dep-9-0-device-libcxx-hid-sections INSTALL=--install
 
     # }
 
