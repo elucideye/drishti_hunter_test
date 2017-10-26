@@ -7,15 +7,6 @@ cmake_minimum_required(VERSION 3.9)
 ### HunterGate and cache ###
 ############################
 
-# drishti specific hunter cache pacakges:
-set(
-    HUNTER_CACHE_SERVERS
-    "https://github.com/elucideye/hunter-cache"
-    CACHE
-    STRING
-    "Hunter cache servers"
-)
-
 set(WORKING_CONFIG "${CMAKE_CURRENT_LIST_DIR}/drishti-upload/config.cmake")
 option(DRISHTI_UPLOAD_IGNORE_SUBMODULES "Ignore submodules in drishti-upload" YES)
 option(DRISHTI_AS_SUBMODULE "Include drishti as a submodule" NO)
