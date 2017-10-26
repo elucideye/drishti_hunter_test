@@ -12,12 +12,8 @@ hunter_config(xgboost VERSION ${HUNTER_xgboost_VERSION} CMAKE_ARGS ${XGBOOST_CMA
 
 ### Configure drishti as submodule ###
 
-set(DRISHTI_CMAKE_ARGS DRISHTI_BUILD_EXAMPLES=NO)
-
 if(DRISHTI_AS_SUBMODULE)
-  hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti" CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})
-else()
-  hunter_config(drishti VERSION ${HUNTER_drishti_VERSION} CMAKE_ARGS ${DRISHTI_CMAKE_ARGS})
+  hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti")
 endif()
 
 # Workaround from:
