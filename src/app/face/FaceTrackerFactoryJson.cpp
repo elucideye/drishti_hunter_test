@@ -14,7 +14,7 @@
 
 // Need std:: extensions for android targets
 #if defined(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
-#  include "drishti_stdlib_string.h"
+#  include "stdlib_string.h"
 #endif
 
 #include <nlohmann/json.hpp> // nlohman-json
