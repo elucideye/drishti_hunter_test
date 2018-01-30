@@ -8,7 +8,13 @@ if(DRISHTI_TEST_BUILD_MIN_SIZE)
 else()
   list(APPEND XGBOOST_CMAKE_ARGS XGBOOST_DO_LEAN=OFF)
 endif()
-hunter_config(xgboost VERSION ${HUNTER_xgboost_VERSION} CMAKE_ARGS ${XGBOOST_CMAKE_ARGS})
+hunter_config(xgboost VERSION 0.40-p10 CMAKE_ARGS ${XGBOOST_CMAKE_ARGS})
+
+hunter_config(
+    acf
+    VERSION ${HUNTER_acf_VERSION}
+    CMAKE_ARGS ACF_BUILD_OGLES_GPGPU=ON
+)
 
 ### Configure drishti as submodule ###
 
