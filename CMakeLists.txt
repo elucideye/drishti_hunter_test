@@ -13,8 +13,8 @@ option(DRISHTI_AS_SUBMODULE "Include drishti as a submodule" NO)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL https://github.com/elucideye/hunter/archive/v0.19.240-p2.tar.gz
-  SHA1 28fbf15c32734ee48ca5f0bc986f02a5c0e9da3c
+  URL https://github.com/elucideye/hunter/archive/v0.19.240-p3.tar.gz
+  SHA1 6a6f37f5912bb32b9226ba7b1a7248d153233e9a
   LOCAL # Note config.cmake includes ${WORKING_CONFIG}
   )
 
