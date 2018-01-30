@@ -22,8 +22,11 @@ if(DRISHTI_AS_SUBMODULE)
   hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti")
 endif()
 
-# Workaround from:
-# * https://github.com/ruslo/hunter/commit/08d25c51e8fa3f3fcfa73f655fe3a7d85d1b4109
+# Workarounds for partial c++11 in ndk10e + gcc toolchains:
+# TODO: This could be managed by try_compile tests, but won't be needed after ndk17
 if(ANDROID)
+  # * https://github.com/ruslo/hunter/commit/08d25c51e8fa3f3fcfa73f655fe3a7d85d1b4109
   hunter_config(dlib VERSION 19.2-p1)
+  # * error: 'struct lconv' has no member named 'decimal_point'
+  hunter_config(nlohmann_json VERSION 2.1.1-p1)
 endif()
