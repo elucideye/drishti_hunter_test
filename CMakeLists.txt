@@ -13,10 +13,10 @@ option(DRISHTI_AS_SUBMODULE "Include drishti as a submodule" NO)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.19.134.tar.gz"
-    SHA1 "de2b0d442d96f82461454162b839c6d179c86dc4"
-    LOCAL # Note config.cmake includes ${WORKING_CONFIG}
-)
+  URL https://github.com/elucideye/hunter/archive/v0.19.240-p3.tar.gz
+  SHA1 6a6f37f5912bb32b9226ba7b1a7248d153233e9a
+  LOCAL # Note config.cmake includes ${WORKING_CONFIG}
+  )
 
 option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" ON)
 option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
