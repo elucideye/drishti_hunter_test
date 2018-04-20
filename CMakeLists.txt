@@ -3,18 +3,49 @@
 
 cmake_minimum_required(VERSION 3.9)
 
+# By default, the source code for all managed dependencies will be removed after
+# building and installing to the cache.  This behavior is consistent with most 
+# installed libraries (i.e., /usr/local/lib/*), but it does prevent stepping 
+# through the dependencies in a debugger in cases where a problem is not 
+# contained within the drishti project sources.  In such cases, you can set 
+# HUNTER_KEEP_PACKAGE_SOURCES=ON from the command line during the project 
+# configuration and the source will be left for all packages when they are
+# created.  This setting must be used before a package is installed -- it 
+# won't be applied retroactively to installed packages.  In order to re-install
+# a package with sources you can always remove the cache
+# (i.e., rm -rf ${HOME}/.hunter) or, less drastically you can modify the 
+# CONFIG-ID of an installed package to trigger the configuration and 
+# installation steps.  This can be done by modifying the input CMAKE_ARGS 
+# list in a hunter_config() call.  In the following example KEEP_SOURCES=1
+# is  added to trigger a re-installation:
+#
+#   hunter_config(foo VERSION ${HUNTER_foo_VERSION} CMAKE_ARGS KEEP_SOURCES=1)
+#
+# The HUNTER_KEEP_PACKAGE_SOURCES development feature is described here:
+#
+# In order to support stepping through package sources you will also have to
+# make sure that debug versions of the packages are installed.  This will
+# happen by default, but will not happen if you specify a release only build
+# using HUNTER_CONFIGURATION_TYPES=Release
+
+# https://docs.hunter.sh/en/latest/reference/user-variables.html#hunter-keep-package-sources
+option(HUNTER_KEEP_PACKAGE_SOURCES "Keep installed package sources for debugging (caveat...)" ON)
+
+option(DRISHTI_USE_DRISHTI_UPLOAD "Use drishti upload configuration" OFF)
+if(DRISHTI_USE_DRISHTI_UPLOAD)
+  include("${CMAKE_CURRENT_LIST_DIR}/cmake/upload.cmake")
+endif()
+
 ############################
 ### HunterGate and cache ###
 ############################
 
-set(WORKING_CONFIG "${CMAKE_CURRENT_LIST_DIR}/drishti-upload/config.cmake")
-option(DRISHTI_UPLOAD_IGNORE_SUBMODULES "Ignore submodules in drishti-upload" YES)
-option(DRISHTI_AS_SUBMODULE "Include drishti as a submodule" NO)
+option(DRISHTI_AS_SUBMODULE "Include drishti as a submodule" ON)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL https://github.com/elucideye/hunter/archive/v0.19.240-p3.tar.gz
-  SHA1 6a6f37f5912bb32b9226ba7b1a7248d153233e9a
+  URL "https://github.com/ruslo/hunter/archive/v0.20.48.tar.gz"
+  SHA1 "758836c69d9ecb7a773b8e4b64e25d0fa4e76582"
   LOCAL # Note config.cmake includes ${WORKING_CONFIG}
   )
 

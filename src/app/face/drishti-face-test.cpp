@@ -53,7 +53,7 @@ public:
 using FaceResources = drishti::sdk::FaceTracker::Resources;
 
 static std::shared_ptr<spdlog::logger> createLogger(const char *name);
-static std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation);
+static std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation, float fx);
 
 // See: https://github.com/elucideye/drishti/blob/master/src/lib/drishti/drishti/ut/test-FaceTracker.cpp
 struct FaceTrackTest
@@ -104,6 +104,11 @@ struct FaceTrackTest
             draw(image, e);
         }
     }
+    
+    void setSizeHint(const cv::Size &size)
+    {
+        m_size = size;
+    }
 
     int callback(drishti::sdk::Array<drishti_face_tracker_result_t, 64>& results)
     {
@@ -113,7 +118,18 @@ struct FaceTrackTest
         {
             const auto &r = results[0];
             {
-                cv::Mat canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image.image).clone();
+                cv::Mat canvas;
+                if(r.image.image.getRows() > 0 && r.image.image.getCols() > 0)
+                {
+                    // Use the actual image as a canvas if it was requested ...
+                    canvas = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image.image).clone();
+                }
+                else
+                {
+                    // ... otherwise we create an empty image for this
+                    canvas = cv::Mat::zeros(m_size.height, m_size.width, CV_8UC3);
+                }
+                
                 for (const auto &f : r.faceModels)
                 {
                     draw(canvas, f);
@@ -138,9 +154,19 @@ struct FaceTrackTest
     drishti_request_t trigger(const drishti_face_tracker_result_t& faces, double timestamp)
     {
         m_logger->info("trigger: Received results at time {}}", timestamp);
-        // if(some_condition_is_true(faces)) {
-        return { 3, true, true }; // request last 3 images and textures
-        // }
+
+        if(faces.faceModels.size())
+        {
+            // Here for formulate the actual request, see drishti_request_t:
+            // 1) Retrieve the last N frames (1)
+            // 2) Get frames in user memory (true)
+            // 3) Get frames as texture ID's (true)
+            // 4) Get full frame images (true)
+            // 5) Get eye crop images (true)
+            return { 1, true, true, true, true };
+        }
+        
+        return { 0 };
     }
     
     int allocator(const drishti_image_t& spec, drishti::sdk::Image4b& image)
@@ -181,6 +207,8 @@ struct FaceTrackTest
     std::shared_ptr<spdlog::logger> m_logger;
     std::string m_output;
     std::size_t m_counter;
+    
+    cv::Size m_size; // video resolution
 };
 
 int gauze_main(int argc, char **argv)
@@ -188,6 +216,8 @@ int gauze_main(int argc, char **argv)
     const auto argumentCount = argc;
 
     std::string sInput, sOutput, sModels;
+
+    float fx = 0.f;
     
     cxxopts::Options options("drishti-face-test", "Command line interface for face model fitting");
     
@@ -195,6 +225,7 @@ int gauze_main(int argc, char **argv)
     options.add_options()
         // input/output:
         ("i,input", "Input image", cxxopts::value<std::string>(sInput))
+        ("f,focal-length", "focal length", cxxopts::value<float>(fx))
         ("o,output", "Output image", cxxopts::value<std::string>(sOutput))
         ("m,models", "Model factory configuration file (JSON)", cxxopts::value<std::string>(sModels));
     // clang-format on    
@@ -269,7 +300,11 @@ int gauze_main(int argc, char **argv)
         
         if (!tracker)
         {
-            tracker = create(factory.factory, image.size(), 0);
+            if(fx == 0.f)
+            {
+                fx = image.cols; // guess
+            }
+            tracker = create(factory.factory, image.size(), 0, fx);
             if (!tracker)
             {
                 logger->error("Failed to create face tracker");
@@ -278,6 +313,8 @@ int gauze_main(int argc, char **argv)
             
             // Register callbacks:
             tracker->add(context.table);
+            
+            context.setSizeHint(image.size());
         }
         
         logger->info("Frame: {}", filename);
@@ -321,20 +358,19 @@ int main(int argc, char **argv)
  * @param size  : size of input frames for detector
  * @orientation : orientation of input frames
  */
-std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation)
+std::shared_ptr<drishti::sdk::FaceTracker> create(FaceResources &factory, const cv::Size& size, int orientation, float fx)
 {
-    const float fx = size.width; // guess
     drishti::sdk::Vec2f p(size.width/2, size.height/2);
     drishti::sdk::SensorModel::Intrinsic intrinsic(p, fx, {size.width, size.height});
     drishti::sdk::SensorModel::Extrinsic extrinsic(drishti::sdk::Matrix33f::eye());
     drishti::sdk::SensorModel sensor(intrinsic, extrinsic);
 
     drishti::sdk::Context context(sensor);
-    context.setDoSingleFace(true);
-    context.setMinDetectionDistance(0.f);
-    context.setMaxDetectionDistance(1.f);
-    context.setFaceFinderInterval(0.f);
-    context.setAcfCalibration(0.f);
+    context.setDoSingleFace(true);         // only detect 1 face per frame
+    context.setMinDetectionDistance(0.f);  // min distance
+    context.setMaxDetectionDistance(1.f);  // max distance
+    context.setFaceFinderInterval(0.f);    // detect on every frame ...
+    context.setAcfCalibration(0.001f);     // adjust detection sensitivity
     context.setRegressorCropScale(1.f);
     context.setMinTrackHits(1);
     context.setMaxTrackMisses(1);
