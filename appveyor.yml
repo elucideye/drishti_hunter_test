@@ -1,7 +1,10 @@
 image: Visual Studio 2015
 
 environment:
-
+  global:
+    GITHUB_USER_PASSWORD:
+      secure: x43zgAFmaHoqWwNDZEVzMvEWQSkHojfRWnVGMnmQziw9ozwrJTEnZdz5QD39bXMv
+  
   matrix:
 
     - TOOLCHAIN: "vs-14-2015-sdk-8-1"
