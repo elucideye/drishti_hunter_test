@@ -7,7 +7,6 @@ INSTALL=$3
 args=(
     --toolchain ${TOOLCHAIN}
     --config ${CONFIG}
-    --verbose
     --ios-multiarch --ios-combined
     --fwd
     GAUZE_ANDROID_USE_EMULATOR=YES
