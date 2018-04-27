@@ -31,28 +31,36 @@ cmake_minimum_required(VERSION 3.9)
 # https://docs.hunter.sh/en/latest/reference/user-variables.html#hunter-keep-package-sources
 option(HUNTER_KEEP_PACKAGE_SOURCES "Keep installed package sources for debugging (caveat...)" ON)
 
-option(DRISHTI_USE_DRISHTI_UPLOAD "Use drishti upload configuration" OFF)
-if(DRISHTI_USE_DRISHTI_UPLOAD)
-  include("${CMAKE_CURRENT_LIST_DIR}/cmake/upload.cmake")
-endif()
+#########################
+### CMAKE_MODULE_PATH ###
+#########################
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 
 ############################
 ### HunterGate and cache ###
 ############################
 
-option(DRISHTI_AS_SUBMODULE "Include drishti as a submodule" ON)
-
 include("cmake/HunterGate.cmake")
 HunterGate(
   URL "https://github.com/ruslo/hunter/archive/v0.20.48.tar.gz"
   SHA1 "758836c69d9ecb7a773b8e4b64e25d0fa4e76582"
-  LOCAL # Note config.cmake includes ${WORKING_CONFIG}
+  LOCAL
   )
 
 option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" ON)
 option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
+option(DRISHTI_OPENGL_ES3 "Support OpenGL ES 3.0 (default 2.0)" OFF)
 
 project(drishti-hunter-test)
+
+######################
+### RPATH defaults ###
+######################
+
+# see: http://www.cmake.org/Wiki/CMake_RPATH_handling
+include(drishti_set_rpath)
+drishti_set_rpath()
 
 ###############
 ### drishti ###

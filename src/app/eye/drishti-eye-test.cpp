@@ -21,18 +21,18 @@
 
 #include <fstream>
 
-static std::shared_ptr<spdlog::logger> createLogger(const char *name);
+static std::shared_ptr<spdlog::logger> createLogger(const char* name);
 
-int gauze_main(int argc, char **argv)
+int gauze_main(int argc, char** argv)
 {
     const auto argumentCount = argc;
 
     bool isRight = false;
     bool isLeft = false;
     std::string sInput, sOutput, sModel;
-    
+
     cxxopts::Options options("drishti-eye-test", "Command line interface for eye model fitting");
-    
+
     // clang-format off
     options.add_options()
         // input/output:

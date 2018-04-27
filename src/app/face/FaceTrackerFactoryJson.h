@@ -18,14 +18,14 @@
 class FaceTrackerFactoryJson
 {
 public:
-    FaceTrackerFactoryJson(const std::string &sModels, const std::string &logger);
+    FaceTrackerFactoryJson(const std::string& sModels, const std::string& logger);
     operator bool() const { return good; }
 
     drishti::sdk::FaceTracker::Resources factory;
-protected:
 
+protected:
     bool good = false;
-    std::vector<std::shared_ptr<std::istream>> streams; 
+    std::vector<std::shared_ptr<std::istream>> streams;
 };
 
 #endif // __drishti_face_FaceTrackerFactory_h__

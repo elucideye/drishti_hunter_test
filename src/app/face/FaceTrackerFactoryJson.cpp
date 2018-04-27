@@ -14,7 +14,7 @@
 
 // Need std:: extensions for android targets
 #if defined(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
-#  include "stdlib_string.h"
+#include "stdlib_string.h"
 #endif
 
 #include <nlohmann/json.hpp> // nlohman-json
@@ -23,9 +23,9 @@
 
 namespace bfs = boost::filesystem;
 
-static std::string cat(const std::string &a, const std::string &b) { return a + b; }
+static std::string cat(const std::string& a, const std::string& b) { return a + b; }
 
-FaceTrackerFactoryJson::FaceTrackerFactoryJson(const std::string &sModels, const std::string &logger)
+FaceTrackerFactoryJson::FaceTrackerFactoryJson(const std::string& sModels, const std::string& logger)
 {
     std::ifstream ifs(sModels);
     if (!ifs)
@@ -35,10 +35,9 @@ FaceTrackerFactoryJson::FaceTrackerFactoryJson(const std::string &sModels, const
 
     nlohmann::json json;
     ifs >> json;
-        
+
     factory.logger = logger; // logger name
-    std::vector< std::pair<const char *, std::istream **> > bindings =
-    {
+    std::vector<std::pair<const char*, std::istream**>> bindings = {
         { "face_detector", &factory.sFaceDetector },
         { "eye_model_regressor", &factory.sEyeRegressor },
         { "face_landmark_regressor", &factory.sFaceRegressor },
@@ -47,18 +46,18 @@ FaceTrackerFactoryJson::FaceTrackerFactoryJson(const std::string &sModels, const
 
     // Get the directory name:
     auto path = bfs::path(sModels);
-    for(auto &binding : bindings)
+    for (auto& binding : bindings)
     {
         auto filename = path.parent_path() / json[binding.first].get<std::string>();
         std::shared_ptr<std::istream> stream = std::make_shared<std::ifstream>(filename.string());
-        if(!stream || !stream->good())
+        if (!stream || !stream->good())
         {
             throw std::runtime_error(cat("FactoryLoader::FactoryLoader() failed to open ", binding.first));
         }
-            
-        (*binding.second) = stream.get();            
+
+        (*binding.second) = stream.get();
         streams.push_back(stream);
     }
-        
+
     good = true;
 }
