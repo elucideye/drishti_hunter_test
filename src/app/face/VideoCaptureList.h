@@ -1,4 +1,5 @@
 #include <opencv2/highgui.hpp>
+#include <memory>
 
 #ifndef __VideoCaptureList_h__
 #define __VideoCaptureList_h__
