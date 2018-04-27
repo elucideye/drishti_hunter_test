@@ -1,6 +1,8 @@
 #include "VideoCaptureList.h"
 
 #include <fstream>
+#include <istream>
+#include <iterator>
 #include <memory>
 
 // https://stackoverflow.com/a/1567703
@@ -17,13 +19,13 @@ public:
     operator std::string() const { return data; }
 };
 
-namespace ext
+namespace detail
 {
-template <typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args)
-{
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
+    template <typename T, typename... Args>
+    std::unique_ptr<T> make_unique(Args&&... args)
+    {
+        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+    }
 }
 
 static void expand(const std::string& filename, std::vector<std::string>& filenames)
@@ -77,12 +79,12 @@ struct VideoCaptureList::Impl
 
 VideoCaptureList::VideoCaptureList(const std::string& filename)
 {
-    m_impl = ext::make_unique<Impl>(filename);
+    m_impl = detail::make_unique<Impl>(filename);
 }
 
 VideoCaptureList::VideoCaptureList(const std::vector<std::string>& filenames)
 {
-    m_impl = ext::make_unique<Impl>(filenames);
+    m_impl = detail::make_unique<Impl>(filenames);
 }
 
 VideoCaptureList::~VideoCaptureList() = default;
@@ -105,7 +107,7 @@ void VideoCaptureList::release()
 
 bool VideoCaptureList::open(const cv::String& filename)
 {
-    m_impl = ext::make_unique<Impl>(filename);
+    m_impl = detail::make_unique<Impl>(filename);
     return !m_impl->image.empty();
 }
 
