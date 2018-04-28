@@ -17,8 +17,12 @@ args=(
     --archive drishti_hunter_test
     --jobs 2
     --test
-    --verbose
     ${INSTALL}
 )
+
+# Skip --verbose on Android (log is too long)
+if [[ ! $name =~ ^android-.* ]]; then 
+    args+=(--verbose)
+fi
 
 polly.py ${args[@]}
