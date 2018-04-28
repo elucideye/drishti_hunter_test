@@ -13,10 +13,9 @@ python %POLLY_ROOT%\bin\polly.py ^
 --archive drishti_hunter_test ^
 --config "%1%" ^
 --toolchain "%2%" ^
---jobs 2 ^            
+--jobs 2 ^
 --test ^
 --fwd HUNTER_USE_CACHE_SERVERS=YES ^
 HUNTER_DISABLE_BUILDS=NO ^
 HUNTER_CONFIGURATION_TYPES="%1%" ^
 HUNTER_SUPPRESS_LIST_OF_FILES=ON
-
