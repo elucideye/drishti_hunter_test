@@ -33,7 +33,13 @@ hunter_config(acf VERSION ${HUNTER_acf_VERSION} CMAKE_ARGS ${acf_cmake_args})
 # ogles_gpgpu
 ##############################################
 
-option(DHT_OGLES_GPGPU_AS_SUBMODULE "Include ogles_gpgpu as a submodule" ON)
+if(APPLE AND NOT IOS) # temporary workaround on osx platform
+  set(dht_ogles_gpgpu_submodule ON)
+else()
+  set(dht_ogles_gpgpu_submodule OFF)
+endif()
+
+option(DHT_OGLES_GPGPU_AS_SUBMODULE "Include ogles_gpgpu as a submodule" ${dht_ogles_gpgpu_submodule})
 
 set(ogles_gpgpu_cmake_args
   OGLES_GPGPU_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
