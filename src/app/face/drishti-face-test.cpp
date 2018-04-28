@@ -8,6 +8,11 @@
 
 */
 
+// Need std:: extensions for android targets
+#if defined(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
+#  include "stdlib_string.h"
+#endif
+
 #include <spdlog/spdlog.h> // for portable logging
 #include <spdlog/fmt/ostr.h>
 
