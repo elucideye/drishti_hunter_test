@@ -10,11 +10,13 @@ echo POLLY_ROOT %POLLY_ROOT%
 
 python %POLLY_ROOT%\bin\polly.py ^
 --verbose ^
---archive drishti ^
+--archive drishti_hunter_test ^
 --config "%1%" ^
 --toolchain "%2%" ^
+--jobs 2 ^            
 --test ^
 --fwd HUNTER_USE_CACHE_SERVERS=YES ^
 HUNTER_DISABLE_BUILDS=NO ^
-HUNTER_SUPPRESS_LIST_OF_FILES=ON ^
-DRISHTI_USE_DRISHTI_UPLOAD=ON
+HUNTER_CONFIGURATION_TYPES="%1%" ^
+HUNTER_SUPPRESS_LIST_OF_FILES=ON
+
