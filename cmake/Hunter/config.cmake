@@ -1,4 +1,7 @@
-### Configure XGBOOST w/ cereal ###
+##############################################
+# xgboost
+##############################################
+
 set(XGBOOST_CMAKE_ARGS
   XGBOOST_USE_HALF=ON
   XGBOOST_USE_CEREAL=ON
@@ -10,6 +13,12 @@ else()
 endif()
 hunter_config(xgboost VERSION 0.40-p10 CMAKE_ARGS ${XGBOOST_CMAKE_ARGS})
 
+##############################################
+# acf
+##############################################
+
+# note: currently acf depends on ogles_gpgpu OpenGL version
+# -- there is no ACF_OPENGL_ES3
 set(acf_cmake_args
   ACF_BUILD_TESTS=OFF 
   ACF_BUILD_EXAMPLES=OFF
@@ -20,6 +29,34 @@ set(acf_cmake_args
 )
 hunter_config(acf VERSION ${HUNTER_acf_VERSION} CMAKE_ARGS ${acf_cmake_args})
 
+##############################################
+# ogles_gpgpu
+##############################################
+
+if(APPLE AND NOT IOS) # temporary workaround on osx platform
+  set(dht_ogles_gpgpu_submodule ON)
+else()
+  set(dht_ogles_gpgpu_submodule OFF)
+endif()
+
+option(DHT_OGLES_GPGPU_AS_SUBMODULE "Include ogles_gpgpu as a submodule" ${dht_ogles_gpgpu_submodule})
+
+set(ogles_gpgpu_cmake_args
+  OGLES_GPGPU_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
+)
+if(DHT_OGLES_GPGPU_AS_SUBMODULE)
+  if(NOT EXISTS "src/3rdparty/ogles_gpgpu")
+    message(FATAL_ERROR "src/3rdparty/ogles_gpgpu submodule was requested, but does not exist")
+  endif()
+  hunter_config(ogles_gpgpu GIT_SUBMODULE "src/3rdparty/ogles_gpgpu" CMAKE_ARGS ${ogles_gpgpu_cmake_args})
+else()
+  hunter_config(ogles_gpgpu VERSION ${HUNTER_ogles_gpgpu_VERSION} CMAKE_ARGS ${ogles_gpgpu_cmake_args})
+endif()
+
+##############################################
+# eigen
+##############################################
+
 set(eigen_cmake_args
   BUILD_TESTING=OFF
   HUNTER_INSTALL_LICENSE_FILES=COPYING.MPL2
@@ -27,10 +64,37 @@ set(eigen_cmake_args
 )
 hunter_config(Eigen VERSION ${HUNTER_Eigen_VERSION} CMAKE_ARGS ${eigen_cmake_args})
 
-### Configure drishti as submodule ###
-if(DRISHTI_AS_SUBMODULE)
-  hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti")
+##############################################
+# aglet
+##############################################
+
+set(aglet_cmake_args
+  AGLET_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
+)
+hunter_config(aglet VERSION ${HUNTER_aglet_VERSION} CMAKE_ARGS ${aglet_cmake_args})
+
+##############################################
+# drishti
+##############################################
+
+option(DHT_DRISHTI_AS_SUBMODULE "Include drishti as a submodule" ON)
+
+set(drishti_cmake_args
+  DRISHTI_BUILD_SHARED_SDK=OFF
+  DRISHTI_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
+)
+if(DHT_DRISHTI_AS_SUBMODULE)
+  if(NOT EXISTS "src/3rdparty/drishti")
+    message(FATAL_ERROR "src/3rdparty/drishti submodule was requested, but does not exist")
+  endif()  
+  hunter_config(drishti GIT_SUBMODULE "src/3rdparty/drishti" CMAKE_ARGS ${drishti_cmake_args})
+else()
+  hunter_config(drishti VERSION ${HUNTER_drishti_VERSION} CMAKE_ARGS ${drishti_cmake_args})
 endif()
+
+##############################################
+# OpenCV
+##############################################
 
 string(COMPARE EQUAL "${CMAKE_OSX_SYSROOT}" "iphoneos" _is_ios)
 
@@ -121,6 +185,10 @@ set(opencv_cmake_args
 
 hunter_config(OpenCV VERSION ${HUNTER_OpenCV_VERSION} CMAKE_ARGS ${opencv_cmake_args})
 
+##############################################
+# dlib
+##############################################
+
 set(dlib_cmake_args
   DLIB_HEADER_ONLY=OFF  #all previous builds were header on, so that is the default
   DLIB_ENABLE_ASSERTS=OFF #must be set on/off or debug/release build will differ and config will not match one
@@ -142,12 +210,23 @@ set(dlib_cmake_args
 if(ANDROID)
   # * https://github.com/ruslo/hunter/commit/08d25c51e8fa3f3fcfa73f655fe3a7d85d1b4109
   set(dlib_version VERSION 19.2-p1)
-  # * error: 'struct lconv' has no member named 'decimal_point'
-  set(nlohmann_json_version VERSION 2.1.1-p1)
 else()
   set(dlib_version ${HUNTER_dlib_VERSION})
-  set(nlohmann_json_version ${HUNTER_nlohmann_json_VERSION})  
 endif()
 
 hunter_config(dlib VERSION ${dlib_version} CMAKE_ARGS ${dlib_cmake_args})
+
+##############################################
+# nlohmann_json
+##############################################
+
+# Workarounds for partial c++11 in ndk10e + gcc toolchains:
+# TODO: This could be managed by try_compile tests, but won't be needed after ndk17
+if(ANDROID)
+  # * error: 'struct lconv' has no member named 'decimal_point'
+  set(nlohmann_json_version VERSION 2.1.1-p1)
+else()
+  set(nlohmann_json_version ${HUNTER_nlohmann_json_VERSION})  
+endif()
+
 hunter_config(nlohmann_json VERSION ${nlohmann_json_version})

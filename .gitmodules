@@ -1,3 +1,6 @@
 [submodule "src/3rdparty/drishti"]
 	path = src/3rdparty/drishti
 	url = https://github.com/elucideye/drishti.git
+[submodule "src/3rdparty/ogles_gpgpu"]
+	path = src/3rdparty/ogles_gpgpu
+	url = https://github.com/hunter-packages/ogles_gpgpu
