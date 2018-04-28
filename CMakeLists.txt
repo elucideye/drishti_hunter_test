@@ -31,6 +31,10 @@ cmake_minimum_required(VERSION 3.9)
 # https://docs.hunter.sh/en/latest/reference/user-variables.html#hunter-keep-package-sources
 option(HUNTER_KEEP_PACKAGE_SOURCES "Keep installed package sources for debugging (caveat...)" ON)
 
+# configure the cache upload
+# NOTE: This runs only during CI builds on travis and appveyor
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/upload.cmake")
+
 #########################
 ### CMAKE_MODULE_PATH ###
 #########################
