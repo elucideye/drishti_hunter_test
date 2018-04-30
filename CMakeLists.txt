@@ -111,6 +111,21 @@ if(DRISHTI_TEST_BUILD_TESTS)
 
 endif()
 
+####################
+#### localeconv ####
+####################
+
+# Workaround for incomplete C++11 implementations (gcc android)
+try_compile(DRISHTI_HUNTER_TEST_HAVE_LOCALECONV
+  "${CMAKE_BINARY_DIR}/compile_tests"
+  "${PROJECT_SOURCE_DIR}/cmake/localeconv.cpp"
+  )
+if(DRISHTI_HUNTER_TEST_HAVE_LOCALECONV)
+  set(DRISHTI_HUNTER_TEST_NO_LOCALECONV OFF)
+else()
+  set(DRISHTI_HUNTER_TEST_NO_LOCALECONV ON)
+endif()
+
 ########################
 #### std::to_string ####
 ########################
