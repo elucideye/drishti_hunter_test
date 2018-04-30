@@ -22,7 +22,14 @@
 class FaceTrackTest
 {
 public:
-    using StackType = std::vector<std::pair<drishti_face_tracker_result_t, cv::Mat>>;
+    
+    struct FrameStorage
+    {
+        cv::Mat frame;
+        cv::Mat eyes;
+        drishti_face_tracker_result_t result;
+    };
+    using StackType = std::vector<FrameStorage>;
 
     FaceTrackTest(std::shared_ptr<spdlog::logger>& logger, const std::string& sOutput);
     ~FaceTrackTest();

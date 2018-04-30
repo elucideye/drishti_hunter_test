@@ -41,6 +41,26 @@
 #endif
 // clang-format on
 
+struct Params
+{
+    float focalLenth = 0.f;
+    
+    bool multiFace = false;
+    float minDetectionDistance = 0.f;
+    float maxDetectionDistance = 0.f;
+    float faceFinderInterval = 0.f;
+    float acfCalibration = 0.f;
+    float regressorCropScale = 1.1f;
+    int minTrackHits = 3;
+    int maxTrackMisses = 2;
+    float minFaceSeparation = 1.0f;
+    bool doSimplePipeline = false;
+    bool doAnnotation = false;
+};
+
+static void from_json(const std::string &filename, Params &params);
+static void to_json(const std::string &filename, const Params &params);
+
 using FaceResources = drishti::sdk::FaceTracker::Resources;
 static std::shared_ptr<cv::VideoCapture> create(const std::string& filename);
 static std::shared_ptr<spdlog::logger> createLogger(const char* name);
@@ -50,24 +70,39 @@ int gauze_main(int argc, char** argv)
 {
     const auto argumentCount = argc;
 
-    bool doPreview = false, doTurbo = false, doCapture = false;
-    std::string sInput, sOutput, sModels;
-    float fx = 0.f, minZ = 0.f, maxZ = 0.f, calibration = 0.0;
-
+    float captureZ = 0.f;
+    bool doPreview = false;
+    std::string sInput, sOutput, sModels, sConfig, sBoilerplate;
+    
+    Params params;
+    
     cxxopts::Options options("drishti-face-test", "Command line interface for face model fitting");
 
     // clang-format off
     options.add_options()
         // input/output:
         ("i,input", "Input image", cxxopts::value<std::string>(sInput))
-        ("f,focal-length", "focal length", cxxopts::value<float>(fx))
-        ("min", "Closest object distance", cxxopts::value<float>(minZ))
-        ("max", "Farthest object distance", cxxopts::value<float>(maxZ))
-        ("c,calibration", "ACF detection calibration term", cxxopts::value<float>(calibration))
         ("o,output", "Output image", cxxopts::value<std::string>(sOutput))
         ("m,models", "Model factory configuration file (JSON)", cxxopts::value<std::string>(sModels))
-        ("capture", "Perform capture every 8 seconds in central capture volume", cxxopts::value<bool>(doCapture))
-        ("turbo", "Run the optimized pipeline (adds a little latency)", cxxopts::value<bool>(doTurbo))
+        ("c,config", "Configuration file", cxxopts::value<std::string>(sConfig))
+        ("boilerplate", "Dump boilerplate json file (then quit)", cxxopts::value<std::string>(sBoilerplate))
+    
+        // context parameters (configuratino):
+        ("focal-length", "focal length", cxxopts::value<float>(params.focalLenth))
+        ("multi-face", "Support multiple faces", cxxopts::value<bool>(params.multiFace))
+        ("min", "Closest object distance", cxxopts::value<float>(params.minDetectionDistance))
+        ("max", "Farthest object distance", cxxopts::value<float>(params.maxDetectionDistance))
+        ("interval", "Face detection interval", cxxopts::value<float>(params.faceFinderInterval))
+        ("calibration", "ACF detection calibration term", cxxopts::value<float>(params.acfCalibration))
+        ("scale", "Regressor crop scale", cxxopts::value<float>(params.regressorCropScale))
+        ("min-track-hits", "Min track hits (before init)", cxxopts::value<int>(params.minTrackHits))
+        ("max-track-misses", "Max track misses (before terminatino)", cxxopts::value<int>(params.maxTrackMisses))
+        ("separation", "Min face separations", cxxopts::value<float>(params.minFaceSeparation))
+        ("simple", "Run the simple pipeline", cxxopts::value<bool>(params.doSimplePipeline))
+        ("annotation", "Annotate the preview texture", cxxopts::value<bool>(params.doAnnotation))
+    
+        // behavior:
+        ("capture", "Target capture distance", cxxopts::value<float>(captureZ))
         ("p,preview", "Preview window", cxxopts::value<bool>(doPreview))
     ;
     // clang-format on
@@ -81,43 +116,60 @@ int gauze_main(int argc, char** argv)
 
     auto logger = createLogger("drishti-face-test");
 
+    
     if (sInput.empty())
     {
         logger->error("Must specify input {}", sInput);
         return 1;
     }
-
+    
     if (sOutput.empty())
     {
         logger->error("Must specify output {}", sOutput);
         return 1;
     }
-
+    
     if (sModels.empty())
     {
         logger->error("Must specify models file {}", sModels);
         return 1;
     }
-
-    if (options.count("focal-length") != 1)
+    
+    if(!sBoilerplate.empty())
     {
-        logger->error("Must specify focal length (in pixels)");
-        return 1;
+        to_json(sBoilerplate, params);
+        return 0;
+    }
+    
+    // User must specify either:
+    // (a) json file with complete parameter set
+    // (b) focal length + min/max distance
+    if(!sConfig.empty())
+    {
+        from_json(sConfig, params);
+    }
+    else
+    {
+        if (options.count("focal-length") != 1)
+        {
+            logger->error("Must specify focal length (in pixels)");
+            return 1;
+        }
+        
+        if (options.count("min") != 1)
+        {
+            logger->error("Must specify closest object distance");
+            return 1;
+        }
+        
+        if (options.count("max") != 1)
+        {
+            logger->error("Must specify farthest object distance");
+            return 1;
+        }
     }
 
-    if (options.count("min") != 1)
-    {
-        logger->error("Must specify closest object distance");
-        return 1;
-    }
-
-    if (options.count("max") != 1)
-    {
-        logger->error("Must specify farthest object distance");
-        return 1;
-    }
-
-    if (minZ > maxZ)
+    if (params.minDetectionDistance > params.maxDetectionDistance)
     {
         logger->error("Search range requires minZ < maxZ");
         return 1;
@@ -165,23 +217,23 @@ int gauze_main(int argc, char** argv)
 
     { // Configure the face tracker parameters:
         drishti::sdk::Vec2f p(size.width / 2, size.height / 2);
-        drishti::sdk::SensorModel::Intrinsic intrinsic(p, fx, { size.width, size.height });
+        drishti::sdk::SensorModel::Intrinsic intrinsic(p, params.focalLenth, { size.width, size.height });
         drishti::sdk::SensorModel::Extrinsic extrinsic(drishti::sdk::Matrix33f::eye());
         drishti::sdk::SensorModel sensor(intrinsic, extrinsic);
 
         drishti::sdk::Context context(sensor);
-        context.setDoSingleFace(true);          // only detect 1 face per frame
-        context.setMinDetectionDistance(minZ);  // min distance
-        context.setMaxDetectionDistance(maxZ);  // max distance
-        context.setFaceFinderInterval(0.f);     // detect on every frame ...
-        context.setAcfCalibration(calibration); // adjust detection sensitivity
-        context.setRegressorCropScale(1.1f);
-        context.setMinTrackHits(3);
-        context.setMaxTrackMisses(2);
-        context.setMinFaceSeparation(1.f);
-        context.setDoOptimizedPipeline(doTurbo);
-        context.setDoAnnotation(true); // add default annotations for quick preview
-
+        context.setDoSingleFace(!params.multiFace);                    // only detect 1 face per frame
+        context.setMinDetectionDistance(params.minDetectionDistance);  // min distance
+        context.setMaxDetectionDistance(params.maxDetectionDistance);  // max distance
+        context.setFaceFinderInterval(params.faceFinderInterval);      // detect on every frame ...
+        context.setAcfCalibration(params.acfCalibration);              // adjust detection sensitivity
+        context.setRegressorCropScale(params.regressorCropScale);      // regressor crop scale
+        context.setMinTrackHits(params.minTrackHits);                  // # of hits before a new track is started
+        context.setMaxTrackMisses(params.maxTrackMisses);              // # of misses before the track is abandoned
+        context.setMinFaceSeparation(params.minFaceSeparation);        // min face separation
+        context.setDoOptimizedPipeline(!params.doSimplePipeline);      // configure optimized pipeline
+        context.setDoAnnotation(true);                                 // add default annotations for quick preview
+        
         tracker = std::make_shared<drishti::sdk::FaceTracker>(&context, factory.factory);
         if (!tracker)
         {
@@ -191,28 +243,29 @@ int gauze_main(int argc, char** argv)
     }
 
     // Register callbacks:
-    FaceTrackTest context(logger, sOutput);
-    context.setSizeHint(size);
+    FaceTrackTest callbacks(logger, sOutput);
+    callbacks.setSizeHint(size);
     if (doPreview)
     {
-        context.initPreview(size, DFLT_TEXTURE_FORMAT);
+        callbacks.initPreview(size, DFLT_TEXTURE_FORMAT);
     }
 
-    if (doCapture)
+    if (options.count("capture") == 1)
     {
         // Set a capture volume on the camera's optical axis with a 1/3 meter radius
         // and be sure not to trigger a capture more than once every 8.0 seconds.
-        context.setCaptureSphere({ { 0.f, 0.f, ((maxZ + minZ) / 2.0f) } }, 0.33f, 8.0);
+        callbacks.setCaptureSphere({ { 0.f, 0.f, captureZ } }, 0.33f, 8.0);
     }
 
-    tracker->add(context.table);
+    tracker->add(callbacks.table);
 
     float resolution = 1.0f;
-
     const auto tic = std::chrono::high_resolution_clock::now();
-
     std::size_t index = 0;
-    std::function<bool()> process = [&]() {
+    
+    // clang-format off
+    std::function<bool()> process = [&]()
+    {
         cv::Mat image;
         (*video) >> image;
 
@@ -235,22 +288,23 @@ int gauze_main(int argc, char** argv)
         if (doPreview)
         { // Update window properties (if used):
             auto& win = glContext->getGeometry();
-            context.setPreviewGeometry(win.tx, win.ty, win.sx * resolution, win.sy * resolution);
+            callbacks.setPreviewGeometry(win.tx, win.ty, win.sx * resolution, win.sy * resolution);
         }
 
         // Register callback:
         drishti::sdk::VideoFrame frame({ image.cols, image.rows }, image.ptr(), true, 0, DFLT_TEXTURE_FORMAT);
         (*tracker)(frame);
 
-        // Comnpute simple/global FPS
-        const auto toc = std::chrono::high_resolution_clock::now();
-        const double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(toc - tic).count();
-        const double fps = static_cast<double>(index + 1) / elapsed;
-
-        logger->info("Frame: {} fps = {}", index++, fps);
+        { // Comnpute simple/global FPS
+            const auto toc = std::chrono::high_resolution_clock::now();
+            const double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(toc - tic).count();
+            const double fps = static_cast<double>(index + 1) / elapsed;
+            logger->info("Frame: {} fps = {}", index++, fps);
+        }
 
         return true;
     };
+    // clang-format on
 
     (*glContext)(process);
 
@@ -305,8 +359,81 @@ static std::shared_ptr<cv::VideoCapture> create(const std::string& filename)
 
 static cv::Size getSize(const cv::VideoCapture& video)
 {
-    return {
+    // clang-format off
+    return
+    {
         static_cast<int>(video.get(cv::CAP_PROP_FRAME_WIDTH)),
         static_cast<int>(video.get(cv::CAP_PROP_FRAME_HEIGHT))
     };
+    // clang-format on
 };
+
+// Need std:: extensions for android targets
+#if defined(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
+#include "stdlib_string.h"
+#endif
+
+#include <nlohmann/json.hpp> // nlohman-json
+
+static void from_json(const nlohmann::json &json, Params &params)
+{
+    params.focalLenth = json.at("focalLength").get<float>();
+    params.multiFace  = json.at("multiFace").get<bool>();
+    params.minDetectionDistance = json.at("minDetectionDistance").get<float>();
+    params.maxDetectionDistance = json.at("maxDetectionDistance").get<float>();
+    params.faceFinderInterval = json.at("faceFinderInterval").get<float>();
+    params.acfCalibration = json.at("acfCalibration").get<float>();
+    params.regressorCropScale = json.at("regressorCropScale").get<int>();
+    params.minTrackHits = json.at("minTrackHits").get<int>();
+    params.maxTrackMisses = json.at("maxTrackMisses").get<int>();
+    params.minFaceSeparation = json.at("minFaceSeparation").get<float>();
+    params.doSimplePipeline = json.at("doSimplePipeline").get<bool>();
+    params.doAnnotation = json.at("doAnnotation").get<bool>();
+}
+
+static void from_json(const std::string &filename, Params &params)
+{
+    std::ifstream ifs(filename);
+    if (!ifs)
+    {
+        throw std::runtime_error("from_json() failed to open " + filename);
+    }
+    
+
+    nlohmann::json json;
+    ifs >> json;
+    from_json(json, params);
+}
+
+static void to_json(nlohmann::json &json, const Params &params)
+{
+    json = nlohmann::json
+    {
+        {"focalLength", params.focalLenth},
+        {"multiFace", params.multiFace},
+        {"minDetectionDistance", params.minDetectionDistance},
+        {"maxDetectionDistance", params.maxDetectionDistance},
+        {"faceFinderInterval", params.faceFinderInterval},
+        {"acfCalibration", params.acfCalibration},
+        {"regressorCropScale", params.regressorCropScale},
+        {"minTrackHits", params.minTrackHits},
+        {"maxTrackMisses", params.maxTrackMisses},
+        {"minFaceSeparation", params.minFaceSeparation},
+        {"doSimplePipeline", params.doSimplePipeline},
+        {"doAnnotation", params.doAnnotation}
+    };
+}
+
+static void to_json(const std::string &filename, const Params &params)
+{
+    std::ofstream ofs(filename);
+    if (!ofs)
+    {
+        throw std::runtime_error("to_json() failed to open " + filename);
+    }
+    
+    nlohmann::json json;
+    to_json(json, params);
+    ofs <<  std::setw(4) << json;
+    
+}

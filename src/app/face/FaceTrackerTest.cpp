@@ -19,14 +19,16 @@
 #include <iostream>
 #include <iomanip>
 
+// clang-format off
 namespace detail
 {
-template <typename Value, typename... Arguments>
-std::unique_ptr<Value> make_unique(Arguments&&... arguments_for_constructor)
-{
-    return std::unique_ptr<Value>(new Value(std::forward<Arguments>(arguments_for_constructor)...));
+    template <typename Value, typename... Arguments>
+    std::unique_ptr<Value> make_unique(Arguments&&... arguments_for_constructor)
+    {
+        return std::unique_ptr<Value>(new Value(std::forward<Arguments>(arguments_for_constructor)...));
+    }
 }
-}
+// clang-format on
 
 static void draw(cv::Mat& image, const drishti::sdk::Eye& eye);
 static void draw(cv::Mat& image, const drishti::sdk::Face& face);
@@ -122,17 +124,21 @@ int FaceTrackTest::callback(drishti::sdk::Array<drishti_face_tracker_result_t, 6
         auto stack = std::make_shared<StackType>(results.size());
         for (int i = 0; i < results.size(); i++)
         {
-            (*stack)[i].first = results[i];
+            (*stack)[i].result = results[i];
 
+            // IMPORTANT: Here we make a deep copies of the input eye/frame images, since the requested
+            // image is passed by a pointer that is only valid for the scope of the callback.  In some
+            // cases the GPU->CPU transfer can be performed directly to pre-existing memory and
+            // the public SDK layer can optimize for this by using teh allocator callback so that
+            // memory can be allocated by the user/application layer.
             const auto& r = results[i];
             if (r.image.image.getRows() > 0 && r.image.image.getCols() > 0)
             {
-                // IMPORTANT: Here we make a deep copy of hte input frame, since the requested image
-                // is passed by a pointer that is only valid for the scope of the callback.  In some
-                // cases the GPU->CPU transfer can be performed directly to pre-existing memory and
-                // the public SDK layer can optimize for this by using teh allocator callback so that
-                // memory can be allocated by the user/application layer.
-                (*stack)[i].second = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image.image).clone();
+                (*stack)[i].frame = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.image.image).clone();
+            }
+            if (r.eyes.image.getRows() > 0 && r.eyes.image.getCols() > 0)
+            {
+                (*stack)[i].eyes = drishti::sdk::drishtiToCv<drishti::sdk::Vec4b, cv::Vec4b>(r.eyes.image).clone();
             }
         }
 
@@ -196,14 +202,16 @@ drishti_request_t FaceTrackTest::trigger(const drishti_face_tracker_result_t& fa
 
     if (shouldCapture(faces))
     {
+        // clang-format off
         return // Here we formulate the actual request, see drishti_request_t:
-            {
-                3,    // Retrieve the last N frames
-                true, // Get frames in user memory
-                true, // Get frames as texture ID's
-                true, // Get full frame images
-                true  // Get eye crop images
-            };
+        {
+            3,    // Retrieve the last N frames
+            true, // Get frames in user memory
+            true, // Get frames as texture ID's
+            true, // Get full frame images
+            true  // Get eye crop images
+        };
+        // clang-format on
     }
 
     return { 0 }; // otherwise request nothing!
@@ -252,14 +260,31 @@ void FaceTrackTest::process(StackType& stack)
     for (int i = 0; i < stack.size(); i++)
     {
         auto& s = stack[i];
-        for (int j = 0; j < s.first.faceModels.size(); j++)
-        {
-            auto& f = s.first.faceModels[j];
-            draw(s.second, f);
-
+        
+        // Example: draw face models for frame
+        //        for (int j = 0; j < s.result.faceModels.size(); j++)
+        //        {
+        //            const auto& f = s.result.faceModels[j];
+        //            draw(s.frame, f);
+        //        }
+        
+        { // Write the frame:
             std::stringstream ss;
-            ss << m_impl->output << "/aframe_" << std::setw(4) << std::setfill('0') << m_impl->counter << "_" << j << ".png";
-            cv::imwrite(ss.str(), s.second);
+            ss << m_impl->output << "/aframe_" << std::setw(4) << std::setfill('0') << m_impl->counter << "_" << i << ".png";
+            cv::imwrite(ss.str(), s.frame);
+        }
+        
+        // Example: draw eye models for nearest face
+        //        for (int j = 0; j < s.result.eyeModels.size(); j++)
+        //        {
+        //            const auto &e = s.result.eyeModels[j];
+        //            draw(s.eyes, e);
+        //        }
+        
+        { // Write the eyes:
+            std::stringstream ss;
+            ss << m_impl->output << "/aeye_" << std::setw(4) << std::setfill('0') << m_impl->counter << "_" << i << ".png";
+            cv::imwrite(ss.str(), s.eyes);
         }
     }
     m_impl->counter++;
