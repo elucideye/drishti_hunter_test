@@ -59,7 +59,13 @@ struct Params
 };
 
 static void from_json(const std::string &filename, Params &params);
+
+// avoid localeconv error w/ nlohmann::json on older android build
+#define DHT_IS_ANDROID (defined(__ANDROID__) || defined(ANDROID))
+
+#if !DHT_IS_ANDROID
 static void to_json(const std::string &filename, const Params &params);
+#endif
 
 using FaceResources = drishti::sdk::FaceTracker::Resources;
 static std::shared_ptr<cv::VideoCapture> create(const std::string& filename);
@@ -72,8 +78,12 @@ int gauze_main(int argc, char** argv)
 
     float captureZ = 0.f;
     bool doPreview = false;
-    std::string sInput, sOutput, sModels, sConfig, sBoilerplate;
-    
+    std::string sInput, sOutput, sModels, sConfig;
+
+#if DHT_IS_ANDROID
+    std::string sBoilerplate;
+#endif
+
     Params params;
     
     cxxopts::Options options("drishti-face-test", "Command line interface for face model fitting");
@@ -85,7 +95,9 @@ int gauze_main(int argc, char** argv)
         ("o,output", "Output image", cxxopts::value<std::string>(sOutput))
         ("m,models", "Model factory configuration file (JSON)", cxxopts::value<std::string>(sModels))
         ("c,config", "Configuration file", cxxopts::value<std::string>(sConfig))
+#if DHT_IS_ANDROID
         ("boilerplate", "Dump boilerplate json file (then quit)", cxxopts::value<std::string>(sBoilerplate))
+#endif
     
         // context parameters (configuratino):
         ("focal-length", "focal length", cxxopts::value<float>(params.focalLenth))
@@ -135,11 +147,13 @@ int gauze_main(int argc, char** argv)
         return 1;
     }
     
+#if !DHT_IS_ANDROID
     if(!sBoilerplate.empty())
     {
         to_json(sBoilerplate, params);
         return 0;
     }
+#endif
     
     // User must specify either:
     // (a) json file with complete parameter set
@@ -368,11 +382,6 @@ static cv::Size getSize(const cv::VideoCapture& video)
     // clang-format on
 };
 
-// Need std:: extensions for android targets
-#if defined(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
-#include "stdlib_string.h"
-#endif
-
 #include <nlohmann/json.hpp> // nlohman-json
 
 static void from_json(const nlohmann::json &json, Params &params)
@@ -405,6 +414,7 @@ static void from_json(const std::string &filename, Params &params)
     from_json(json, params);
 }
 
+#if !DHT_IS_ANDROID
 static void to_json(nlohmann::json &json, const Params &params)
 {
     json = nlohmann::json
@@ -434,6 +444,7 @@ static void to_json(const std::string &filename, const Params &params)
     
     nlohmann::json json;
     to_json(json, params);
-    ofs <<  std::setw(4) << json;
-    
+    ofs << std::setw(4) << json;
 }
+#endif
+
