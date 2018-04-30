@@ -61,9 +61,9 @@ struct Params
 static void from_json(const std::string &filename, Params &params);
 
 // avoid localeconv error w/ nlohmann::json on older android build
-#define DHT_IS_ANDROID (defined(__ANDROID__) || defined(ANDROID))
 
-#if !DHT_IS_ANDROID
+
+#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
 static void to_json(const std::string &filename, const Params &params);
 #endif
 
@@ -80,7 +80,7 @@ int gauze_main(int argc, char** argv)
     bool doPreview = false;
     std::string sInput, sOutput, sModels, sConfig;
 
-#if DHT_IS_ANDROID
+#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
     std::string sBoilerplate;
 #endif
 
@@ -95,10 +95,9 @@ int gauze_main(int argc, char** argv)
         ("o,output", "Output image", cxxopts::value<std::string>(sOutput))
         ("m,models", "Model factory configuration file (JSON)", cxxopts::value<std::string>(sModels))
         ("c,config", "Configuration file", cxxopts::value<std::string>(sConfig))
-#if DHT_IS_ANDROID
+#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
         ("boilerplate", "Dump boilerplate json file (then quit)", cxxopts::value<std::string>(sBoilerplate))
 #endif
-    
         // context parameters (configuratino):
         ("focal-length", "focal length", cxxopts::value<float>(params.focalLenth))
         ("multi-face", "Support multiple faces", cxxopts::value<bool>(params.multiFace))
@@ -147,7 +146,7 @@ int gauze_main(int argc, char** argv)
         return 1;
     }
     
-#if !DHT_IS_ANDROID
+#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
     if(!sBoilerplate.empty())
     {
         to_json(sBoilerplate, params);
@@ -414,7 +413,7 @@ static void from_json(const std::string &filename, Params &params)
     from_json(json, params);
 }
 
-#if !DHT_IS_ANDROID
+#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
 static void to_json(nlohmann::json &json, const Params &params)
 {
     json = nlohmann::json
