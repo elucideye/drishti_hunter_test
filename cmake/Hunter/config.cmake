@@ -17,6 +17,8 @@ hunter_config(xgboost VERSION 0.40-p10 CMAKE_ARGS ${XGBOOST_CMAKE_ARGS})
 # acf
 ##############################################
 
+option(DHT_ACF_AS_SUBMODULE "Include acf as submodule" ON)
+
 # note: currently acf depends on ogles_gpgpu OpenGL version
 # -- there is no ACF_OPENGL_ES3
 set(acf_cmake_args
@@ -25,21 +27,20 @@ set(acf_cmake_args
   ACF_SERIALIZE_WITH_CVMATIO=OFF
   ACF_SERIALIZE_WITH_CEREAL=ON
   ACF_BUILD_OGLES_GPGPU=ON
-  ACF_KEEPS_SOURCES=1
+  ACF_KEEP_SOURCES=1
 )
-hunter_config(acf VERSION ${HUNTER_acf_VERSION} CMAKE_ARGS ${acf_cmake_args})
+
+if(DHT_ACF_AS_SUBMODULE)
+  hunter_config(acf GIT_SUBMODULE "src/3rdparty/acf" CMAKE_ARGS ${acf_cmake_args})
+else()
+  hunter_config(acf VERSION ${HUNTER_acf_VERSION} CMAKE_ARGS ${acf_cmake_args})
+endif()
 
 ##############################################
 # ogles_gpgpu
 ##############################################
 
-if(APPLE AND NOT IOS) # temporary workaround on osx platform
-  set(dht_ogles_gpgpu_submodule ON)
-else()
-  set(dht_ogles_gpgpu_submodule OFF)
-endif()
-
-option(DHT_OGLES_GPGPU_AS_SUBMODULE "Include ogles_gpgpu as a submodule" ${dht_ogles_gpgpu_submodule})
+option(DHT_OGLES_GPGPU_AS_SUBMODULE "Include ogles_gpgpu as a submodule" OFF)
 
 set(ogles_gpgpu_cmake_args
   OGLES_GPGPU_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
@@ -68,19 +69,30 @@ hunter_config(Eigen VERSION ${HUNTER_Eigen_VERSION} CMAKE_ARGS ${eigen_cmake_arg
 # aglet
 ##############################################
 
+option(DHT_AGLET_AS_SUBMODULE "Include aglet as a submodule" OFF)
+
 set(aglet_cmake_args
   AGLET_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
 )
 hunter_config(aglet VERSION ${HUNTER_aglet_VERSION} CMAKE_ARGS ${aglet_cmake_args})
 
+if(DHT_AGLET_AS_SUBMODULE)
+  if(NOT EXISTS "src/3rdparty/aglet")
+    message(FATAL_ERROR "src/3rdparty/aglet submodule was requested, but does not exist")
+  endif()
+  hunter_config(aglet GIT_SUBMODULE "src/3rdparty/aglet" CMAKE_ARGS ${aglet_cmake_args})
+else()
+  hunter_config(aglet VERSION ${HUNTER_aglet_VERSION} CMAKE_ARGS ${aglet_cmake_args})
+endif()
+
 ##############################################
 # drishti
 ##############################################
 
+option(DHT_DRISHTI_BUILD_SHARED_SDK "Build shared drishti library" ON)
 option(DHT_DRISHTI_AS_SUBMODULE "Include drishti as a submodule" ON)
-
 set(drishti_cmake_args
-  DRISHTI_BUILD_SHARED_SDK=OFF
+  DRISHTI_BUILD_SHARED_SDK=${DHT_DRISHTI_BUILD_SHARED_SDK}
   DRISHTI_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
 )
 if(DHT_DRISHTI_AS_SUBMODULE)
@@ -91,6 +103,7 @@ if(DHT_DRISHTI_AS_SUBMODULE)
 else()
   hunter_config(drishti VERSION ${HUNTER_drishti_VERSION} CMAKE_ARGS ${drishti_cmake_args})
 endif()
+
 
 ##############################################
 # OpenCV
@@ -112,6 +125,7 @@ else()
 endif()
 
 set(opencv_cmake_args
+  DUMMY_FLAG=1
 
   OPENCV_WITH_EXTRA_MODULES=OFF
   

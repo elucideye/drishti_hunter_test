@@ -47,10 +47,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL "https://github.com/ruslo/hunter/archive/v0.20.48.tar.gz"
-  SHA1 "758836c69d9ecb7a773b8e4b64e25d0fa4e76582"
+  URL "https://github.com/ruslo/hunter/archive/v0.20.74.tar.gz"
+  SHA1 "88e3c806f0ff640c0e3cbc32b340ae2c370b31f5"
   LOCAL
-  )
+)
 
 option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" ON)
 option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
@@ -70,8 +70,14 @@ drishti_set_rpath()
 ### drishti ###
 ###############
 
-hunter_add_package(drishti)
-find_package(drishti CONFIG REQUIRED)
+if(DHT_USE_LOCAL_DRISHTI)
+  option(DRISHTI_BUILD_OGLES_GPGPU "Build with OGLES_GPGPU" ON)
+  add_subdirectory(src/3rdparty/drishti)
+  add_library(drishti::drishti ALIAS drishti)
+else()
+  hunter_add_package(drishti)
+  find_package(drishti CONFIG REQUIRED)
+endif()
 
 ############
 ### Data ###
