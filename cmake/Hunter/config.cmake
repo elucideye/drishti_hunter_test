@@ -81,7 +81,7 @@ hunter_config(aglet VERSION ${HUNTER_aglet_VERSION} CMAKE_ARGS ${aglet_cmake_arg
 ##############################################
 
 set(drishti_cmake_args
-  DRISHTI_BUILD_SHARED_SDK=ON
+  DRISHTI_BUILD_SHARED_SDK=${DRISHTI_SDK_TEST_DRISHTI_BUILD_SHARED_SDK}
   DRISHTI_SDK_TEST_OPENGL_ES3=${DRISHTI_SDK_TEST_OPENGL_ES3}
 )
 option(DRISHTI_SDK_TEST_DRISHTI_AS_SUBMODULE "Include drishti as a submodule" ON)
