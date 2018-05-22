@@ -4,18 +4,18 @@
 cmake_minimum_required(VERSION 3.9)
 
 # By default, the source code for all managed dependencies will be removed after
-# building and installing to the cache.  This behavior is consistent with most 
-# installed libraries (i.e., /usr/local/lib/*), but it does prevent stepping 
-# through the dependencies in a debugger in cases where a problem is not 
-# contained within the drishti project sources.  In such cases, you can set 
-# HUNTER_KEEP_PACKAGE_SOURCES=ON from the command line during the project 
+# building and installing to the cache.  This behavior is consistent with most
+# installed libraries (i.e., /usr/local/lib/*), but it does prevent stepping
+# through the dependencies in a debugger in cases where a problem is not
+# contained within the drishti project sources.  In such cases, you can set
+# HUNTER_KEEP_PACKAGE_SOURCES=ON from the command line during the project
 # configuration and the source will be left for all packages when they are
-# created.  This setting must be used before a package is installed -- it 
+# created.  This setting must be used before a package is installed -- it
 # won't be applied retroactively to installed packages.  In order to re-install
 # a package with sources you can always remove the cache
-# (i.e., rm -rf ${HOME}/.hunter) or, less drastically you can modify the 
-# CONFIG-ID of an installed package to trigger the configuration and 
-# installation steps.  This can be done by modifying the input CMAKE_ARGS 
+# (i.e., rm -rf ${HOME}/.hunter) or, less drastically you can modify the
+# CONFIG-ID of an installed package to trigger the configuration and
+# installation steps.  This can be done by modifying the input CMAKE_ARGS
 # list in a hunter_config() call.  In the following example KEEP_SOURCES=1
 # is  added to trigger a re-installation:
 #
