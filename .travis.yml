@@ -52,12 +52,13 @@ matrix:
         CONFIG=Release
         INSTALL=--strip
 
-      # FIXME: C++ exception with description "EGLContextImpl::EGLContextImpl() : eglCreatePbufferSurface():
-      # Assertion '(eglGetError() == EGL_SUCCESS)' failed in file 'lib/aglet/EGLContext.cpp' line 59"
-      # It seems the cpu based gpu emulator associated with GAUZE_ANDROID_EMULATOR_GPU=off either isn't
-      # working or isn't compatible with this eglCreatePbufferSurface() stuff, however, the build is fine
-      # and the tests run on a real Android via USB connection in local host testing
-      # See: https://developer.android.com/studio/run/emulator-acceleration#command-gpu
+    # FIXME: gcc w/ lto is crashing -- possibly in the drishti GLPrinter (huge code generated font tables)
+#     - os: linux
+#       env: >
+#         TOOLCHAIN=gcc-5-pic-hid-sections-lto
+#         CONFIG=Release
+#         INSTALL=--strip
+
     - os: linux
       env: >
         TOOLCHAIN=android-ndk-r17-api-24-arm64-v8a-clang-libcxx14
