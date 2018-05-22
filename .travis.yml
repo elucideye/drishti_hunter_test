@@ -18,7 +18,7 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-5.0      
+      - llvm-toolchain-trusty-5.0
     packages:
       # For Qt
       - libegl1-mesa-dev
@@ -91,7 +91,7 @@ before_install:
 
   # https://stackoverflow.com/a/38790045
   - bin/travis_clang_links.sh
-  
+
 install:
   - source bin/hunter_env.sh
 
