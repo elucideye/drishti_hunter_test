@@ -24,7 +24,7 @@ if [ -z "${CI}" ]; then
             count=$(($count + 1))
             sleep 1
         done
-        
+
         [ $count -eq 3 ] && {
             echo "\n\033[33;1mThe command \"$@\" failed 3 times.\033[0m\n" >&2
         }
