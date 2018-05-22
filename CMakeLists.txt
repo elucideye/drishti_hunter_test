@@ -59,7 +59,7 @@ option(DRISHTI_SDK_TEST_BUILD_TESTS "Build cross platform tests" OFF)
 option(DRISHTI_SDK_TEST_OPENGL_ES3 "Support OpenGL ES 3.0 (default 2.0)" OFF)
 option(DRISHTI_SDK_TEST_DRISHTI_BUILD_SHARED_SDK "Build drishti as a shared library" ON)
 
-project(drishti-hunter-test)
+project(drishti-hunter-test VERSION 0.0.1)
 
 ######################
 ### RPATH defaults ###
