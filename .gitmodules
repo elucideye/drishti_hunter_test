@@ -4,3 +4,6 @@
 [submodule "src/3rdparty/ogles_gpgpu"]
 	path = src/3rdparty/ogles_gpgpu
 	url = https://github.com/hunter-packages/ogles_gpgpu
+[submodule "src/3rdparty/acf"]
+	path = src/3rdparty/acf
+	url = https://github.com/elucideye/acf.git

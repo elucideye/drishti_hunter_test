@@ -52,9 +52,11 @@ HunterGate(
   LOCAL
   )
 
-option(DRISHTI_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" ON)
-option(DRISHTI_TEST_BUILD_TESTS "Build cross platform tests" OFF)
-option(DRISHTI_OPENGL_ES3 "Support OpenGL ES 3.0 (default 2.0)" OFF)
+set(DRISHTI_SDK_TEST_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
+option(DRISHTI_SDK_TEST_BUILD_MIN_SIZE "Toggle minsize (predict only) builds" ON)
+option(DRISHTI_SDK_TEST_BUILD_TESTS "Build cross platform tests" OFF)
+option(DRISHTI_SDK_TEST_OPENGL_ES3 "Support OpenGL ES 3.0 (default 2.0)" OFF)
 
 project(drishti-hunter-test)
 
@@ -66,49 +68,8 @@ project(drishti-hunter-test)
 include(drishti_set_rpath)
 drishti_set_rpath()
 
-###############
-### drishti ###
-###############
-
-hunter_add_package(drishti)
-find_package(drishti CONFIG REQUIRED)
-
-############
-### Data ###
-############
-
-hunter_add_package(drishti_assets)
-find_package(drishti_assets CONFIG REQUIRED)
-
-###############
-### Utility ###
-###############
-
-hunter_add_package(OpenCV) # for image IO
-find_package(OpenCV REQUIRED)
-
-hunter_add_package(cxxopts) # for CLI
-find_package(cxxopts CONFIG REQUIRED)
-
-hunter_add_package(spdlog) # for logging
-find_package(spdlog CONFIG REQUIRED)
-
-set(base_deps
-  drishti::drishti
-  cxxopts::cxxopts
-  ${OpenCV_LIBS}
-  spdlog::spdlog
-  )
-
-if(DRISHTI_TEST_BUILD_TESTS)
-
-  hunter_add_package(gauze) # for tests
-  find_package(gauze CONFIG REQUIRED)
-
-  list(APPEND base_deps gauze::gauze)
-
+if(DRISHTI_SDK_TEST_BUILD_TESTS)
   enable_testing()
-
 endif()
 
 ####################
@@ -116,30 +77,20 @@ endif()
 ####################
 
 # Workaround for incomplete C++11 implementations (gcc android)
-try_compile(DRISHTI_HUNTER_TEST_HAVE_LOCALECONV
+try_compile(DRISHTI_SDK_TEST_HAVE_LOCALECONV
   "${CMAKE_BINARY_DIR}/compile_tests"
   "${PROJECT_SOURCE_DIR}/cmake/localeconv.cpp"
   )
-if(DRISHTI_HUNTER_TEST_HAVE_LOCALECONV)
-  set(DRISHTI_HUNTER_TEST_NO_LOCALECONV OFF)
-else()
-  set(DRISHTI_HUNTER_TEST_NO_LOCALECONV ON)
-endif()
 
 ########################
 #### std::to_string ####
 ########################
 
 # Workaround for incomplete C++11 implementations (gcc android)
-try_compile(DRISHTI_HUNTER_TEST_HAVE_TO_STRING
+try_compile(DRISHTI_SDK_TEST_HAVE_TO_STRING
   "${CMAKE_BINARY_DIR}/compile_tests"
   "${PROJECT_SOURCE_DIR}/cmake/to_string.cpp"
   )
-if(DRISHTI_HUNTER_TEST_HAVE_TO_STRING)
-  set(DRISHTI_HUNTER_TEST_ADD_TO_STRING OFF)
-else()
-  set(DRISHTI_HUNTER_TEST_ADD_TO_STRING ON)
-endif()
 
 add_subdirectory(src)
 

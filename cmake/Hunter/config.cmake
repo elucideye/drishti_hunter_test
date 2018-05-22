@@ -27,24 +27,27 @@ set(acf_cmake_args
   ACF_BUILD_OGLES_GPGPU=ON
   ACF_KEEPS_SOURCES=1
 )
-hunter_config(acf VERSION ${HUNTER_acf_VERSION} CMAKE_ARGS ${acf_cmake_args})
+
+option(DRISHTI_SDK_TEST_ACF_AS_SUBMODULE "Use acf as submodule" ON)
+if(DRISHTI_SDK_TEST_ACF_AS_SUBMODULE)
+  if(NOT EXISTS "src/3rdparty/acf")
+    message(FATAL_ERROR "src/3rdparty/acf submodule was requested, but does not exist")
+  endif()
+  hunter_config(acf GIT_SUBMODULE "src/3rdparty/acf" CMAKE_ARGS ${acf_cmake_args})
+else()
+  hunter_config(acf VERSION ${HUNTER_acf_VERSION} CMAKE_ARGS ${acf_cmake_args})
+endif()
 
 ##############################################
 # ogles_gpgpu
 ##############################################
 
-if(APPLE AND NOT IOS) # temporary workaround on osx platform
-  set(dht_ogles_gpgpu_submodule ON)
-else()
-  set(dht_ogles_gpgpu_submodule OFF)
-endif()
-
-option(DHT_OGLES_GPGPU_AS_SUBMODULE "Include ogles_gpgpu as a submodule" ${dht_ogles_gpgpu_submodule})
-
 set(ogles_gpgpu_cmake_args
-  OGLES_GPGPU_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
+  OGLES_GPGPU_OPENGL_ES3=${DRISHTI_SDK_TEST_OPENGL_ES3}
 )
-if(DHT_OGLES_GPGPU_AS_SUBMODULE)
+
+option(DRISHTI_SDK_TEST_OGLES_GPGPU_AS_SUBMODULE "Include ogles_gpgpu as a submodule" OFF)
+if(DRISHTI_SDK_TEST_OGLES_GPGPU_AS_SUBMODULE)
   if(NOT EXISTS "src/3rdparty/ogles_gpgpu")
     message(FATAL_ERROR "src/3rdparty/ogles_gpgpu submodule was requested, but does not exist")
   endif()
@@ -69,7 +72,7 @@ hunter_config(Eigen VERSION ${HUNTER_Eigen_VERSION} CMAKE_ARGS ${eigen_cmake_arg
 ##############################################
 
 set(aglet_cmake_args
-  AGLET_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
+  AGLET_OPENGL_ES3=${DRISHTI_SDK_TEST_OPENGL_ES3}
 )
 hunter_config(aglet VERSION ${HUNTER_aglet_VERSION} CMAKE_ARGS ${aglet_cmake_args})
 
@@ -77,13 +80,12 @@ hunter_config(aglet VERSION ${HUNTER_aglet_VERSION} CMAKE_ARGS ${aglet_cmake_arg
 # drishti
 ##############################################
 
-option(DHT_DRISHTI_AS_SUBMODULE "Include drishti as a submodule" ON)
-
 set(drishti_cmake_args
-  DRISHTI_BUILD_SHARED_SDK=OFF
-  DRISHTI_OPENGL_ES3=${DRISHTI_OPENGL_ES3}
+  DRISHTI_BUILD_SHARED_SDK=ON
+  DRISHTI_SDK_TEST_OPENGL_ES3=${DRISHTI_SDK_TEST_OPENGL_ES3}
 )
-if(DHT_DRISHTI_AS_SUBMODULE)
+option(DRISHTI_SDK_TEST_DRISHTI_AS_SUBMODULE "Include drishti as a submodule" ON)
+if(DRISHTI_SDK_TEST_DRISHTI_AS_SUBMODULE)
   if(NOT EXISTS "src/3rdparty/drishti")
     message(FATAL_ERROR "src/3rdparty/drishti submodule was requested, but does not exist")
   endif()  
