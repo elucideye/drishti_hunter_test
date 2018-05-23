@@ -6,10 +6,18 @@
   \copyright Copyright 2017 Elucideye, Inc. All rights reserved.
   \license{This project is released under the 3 Clause BSD License.}
 
+  drishti-face-test \
+    --input=0 \
+    --model=${SOME_PATH_VAR}/drishti-assets/drishti_face_gray_80x80.cpb \
+    --output=${SOME_OUT_DIR} \
+    --calibration=0.01 \
+    --config=${DHT_REPO}/config/logitech_c615.json \
+    --preview
+
 */
 
 // Need std:: extensions for android targets
-#if defined(DRISHTI_HUNTER_TEST_ADD_TO_STRING)
+#if !defined(DRISHTI_SDK_TEST_HAVE_TO_STRING)
 #  include "stdlib_string.h"
 #endif
 
@@ -43,7 +51,9 @@
 
 struct Params
 {
-    float focalLenth = 0.f;
+    int videoWidth = 0;
+    int videoHeight = 0;
+    float focalLength = 0.f;
     
     bool multiFace = false;
     float minDetectionDistance = 0.f;
@@ -53,17 +63,17 @@ struct Params
     float regressorCropScale = 1.1f;
     int minTrackHits = 3;
     int maxTrackMisses = 2;
-    float minFaceSeparation = 1.0f;
+    float minFaceSeparation = 0.1f;
     bool doSimplePipeline = false;
     bool doAnnotation = false;
+    bool doCpuAcf = false;
 };
 
 static void from_json(const std::string &filename, Params &params);
 
 // avoid localeconv error w/ nlohmann::json on older android build
 
-
-#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
+#if defined(DRISHTI_SDK_TEST_HAVE_LOCALECONV)
 static void to_json(const std::string &filename, const Params &params);
 #endif
 
@@ -80,7 +90,7 @@ int gauze_main(int argc, char** argv)
     bool doPreview = false;
     std::string sInput, sOutput, sModels, sConfig;
 
-#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
+#if defined(DRISHTI_SDK_TEST_HAVE_LOCALECONV)
     std::string sBoilerplate;
 #endif
 
@@ -95,11 +105,11 @@ int gauze_main(int argc, char** argv)
         ("o,output", "Output image", cxxopts::value<std::string>(sOutput))
         ("m,models", "Model factory configuration file (JSON)", cxxopts::value<std::string>(sModels))
         ("c,config", "Configuration file", cxxopts::value<std::string>(sConfig))
-#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
+#if defined(DRISHTI_SDK_TEST_HAVE_LOCALECONV)
         ("boilerplate", "Dump boilerplate json file (then quit)", cxxopts::value<std::string>(sBoilerplate))
 #endif
         // context parameters (configuratino):
-        ("focal-length", "focal length", cxxopts::value<float>(params.focalLenth))
+        ("focal-length", "focal length", cxxopts::value<float>(params.focalLength))
         ("multi-face", "Support multiple faces", cxxopts::value<bool>(params.multiFace))
         ("min", "Closest object distance", cxxopts::value<float>(params.minDetectionDistance))
         ("max", "Farthest object distance", cxxopts::value<float>(params.maxDetectionDistance))
@@ -146,7 +156,7 @@ int gauze_main(int argc, char** argv)
         return 1;
     }
     
-#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
+#if defined(DRISHTI_SDK_TEST_HAVE_LOCALECONV)
     if(!sBoilerplate.empty())
     {
         to_json(sBoilerplate, params);
@@ -193,14 +203,37 @@ int gauze_main(int argc, char** argv)
     // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // Allocate a video source and get the video frame dimensions:
     // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    auto video = create(sInput);
-    if (!video)
+
+    std::shared_ptr<cv::VideoCapture> video = create(sInput);
+    if (!(video && video->isOpened()))
     {
-        logger->error("Failed to create video source for {}", sInput);
+       logger->error("Failed to create video source for {}", sInput);
+       return 1;
+    }
+
+    video->set(CV_CAP_PROP_FRAME_WIDTH, params.videoWidth);
+    video->set(CV_CAP_PROP_FRAME_HEIGHT, params.videoHeight);
+    
+    cv::Size size = getSize(*video);
+    if (size.area() == 0)
+    {
+        logger->error("Failed to read a frame from device {}", sInput);
         return 1;
     }
-    cv::Size size = getSize(*video);
 
+    if ((size.width != params.videoWidth) || (size.height != params.videoHeight))
+    {
+        logger->error
+        (
+            "Failed to read a video frame with requested dimensions, received {}x{} expected {}x{}",
+            size.width,
+            size.height,
+            params.videoWidth,
+            params.videoHeight
+        );
+        return 1;
+    }
+    
     // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     // Create an OpenGL context (w/ optional window):
     // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -230,7 +263,7 @@ int gauze_main(int argc, char** argv)
 
     { // Configure the face tracker parameters:
         drishti::sdk::Vec2f p(size.width / 2, size.height / 2);
-        drishti::sdk::SensorModel::Intrinsic intrinsic(p, params.focalLenth, { size.width, size.height });
+        drishti::sdk::SensorModel::Intrinsic intrinsic(p, params.focalLength, { size.width, size.height });
         drishti::sdk::SensorModel::Extrinsic extrinsic(drishti::sdk::Matrix33f::eye());
         drishti::sdk::SensorModel sensor(intrinsic, extrinsic);
 
@@ -245,7 +278,8 @@ int gauze_main(int argc, char** argv)
         context.setMaxTrackMisses(params.maxTrackMisses);              // # of misses before the track is abandoned
         context.setMinFaceSeparation(params.minFaceSeparation);        // min face separation
         context.setDoOptimizedPipeline(!params.doSimplePipeline);      // configure optimized pipeline
-        context.setDoAnnotation(true);                                 // add default annotations for quick preview
+        context.setDoAnnotation(params.doAnnotation);                  // add default annotations for quick preview
+        context.setDoCpuACF(params.doCpuAcf);                          // available only if using the simple pipeline
         
         tracker = std::make_shared<drishti::sdk::FaceTracker>(&context, factory.factory);
         if (!tracker)
@@ -288,6 +322,8 @@ int gauze_main(int argc, char** argv)
             return false;
         }
 
+      //  cv::imwrite("c:/tmp/frame.png", image); // 1920 / fx =  26 / 20; fx = 1920 * 20/26
+
         if (size.area() && (size != image.size()))
         {
             logger->error("Frame dimensions must be consistent: {}{}", size.width, size.height);
@@ -324,7 +360,7 @@ int gauze_main(int argc, char** argv)
     return 0;
 }
 
-#if !defined(DRISHTI_TEST_BUILD_TESTS)
+#if !defined(DRISHTI_SDK_TEST_BUILD_TESTS)
 int main(int argc, char** argv)
 {
     try
@@ -358,7 +394,12 @@ static std::shared_ptr<cv::VideoCapture> create(const std::string& filename)
 {
     if (filename.find_first_not_of("0123456789") == std::string::npos)
     {
-        return std::make_shared<cv::VideoCapture>(std::stoi(filename));
+        auto ptr = std::make_shared<cv::VideoCapture>(std::stoi(filename));
+        if (ptr && !ptr->isOpened())
+        {
+            ptr->open(0 + cv::CAP_ANY);
+        }
+        return ptr;
     }
     else if (filename.find(".txt") != std::string::npos)
     {
@@ -385,18 +426,21 @@ static cv::Size getSize(const cv::VideoCapture& video)
 
 static void from_json(const nlohmann::json &json, Params &params)
 {
-    params.focalLenth = json.at("focalLength").get<float>();
+    params.videoWidth = json.at("videoWidth").get<float>();
+    params.videoHeight = json.at("videoHeight").get<float>();
+    params.focalLength = json.at("focalLength").get<float>();
     params.multiFace  = json.at("multiFace").get<bool>();
     params.minDetectionDistance = json.at("minDetectionDistance").get<float>();
     params.maxDetectionDistance = json.at("maxDetectionDistance").get<float>();
     params.faceFinderInterval = json.at("faceFinderInterval").get<float>();
     params.acfCalibration = json.at("acfCalibration").get<float>();
-    params.regressorCropScale = json.at("regressorCropScale").get<int>();
+    params.regressorCropScale = json.at("regressorCropScale").get<float>();
     params.minTrackHits = json.at("minTrackHits").get<int>();
     params.maxTrackMisses = json.at("maxTrackMisses").get<int>();
     params.minFaceSeparation = json.at("minFaceSeparation").get<float>();
     params.doSimplePipeline = json.at("doSimplePipeline").get<bool>();
     params.doAnnotation = json.at("doAnnotation").get<bool>();
+    params.doCpuAcf = json.at("doCpuAcf").get<bool>();
 }
 
 static void from_json(const std::string &filename, Params &params)
@@ -406,19 +450,20 @@ static void from_json(const std::string &filename, Params &params)
     {
         throw std::runtime_error("from_json() failed to open " + filename);
     }
-    
-
+ 
     nlohmann::json json;
     ifs >> json;
     from_json(json, params);
 }
 
-#if !defined(DRISHTI_HUNTER_TEST_NO_LOCALECONV)
+#if defined(DRISHTI_SDK_TEST_HAVE_LOCALECONV)
 static void to_json(nlohmann::json &json, const Params &params)
 {
     json = nlohmann::json
     {
-        {"focalLength", params.focalLenth},
+        {"videoWidth", params.videoWidth},
+        {"videoHeight", params.videoHeight},
+        {"focalLength", params.focalLength},
         {"multiFace", params.multiFace},
         {"minDetectionDistance", params.minDetectionDistance},
         {"maxDetectionDistance", params.maxDetectionDistance},
@@ -429,7 +474,8 @@ static void to_json(nlohmann::json &json, const Params &params)
         {"maxTrackMisses", params.maxTrackMisses},
         {"minFaceSeparation", params.minFaceSeparation},
         {"doSimplePipeline", params.doSimplePipeline},
-        {"doAnnotation", params.doAnnotation}
+        {"doAnnotation", params.doAnnotation},
+        {"doCpuAcf", params.doCpuAcf}
     };
 }
 
@@ -446,4 +492,3 @@ static void to_json(const std::string &filename, const Params &params)
     ofs << std::setw(4) << json;
 }
 #endif
-
