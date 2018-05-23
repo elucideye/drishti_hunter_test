@@ -46,12 +46,12 @@ matrix:
         CONFIG=Release
         INSTALL=--strip
 
-    # Note: gcc-5-pic-hid-sections-lto (LTO) has frequent compiler crashes
-    - os: linux
-      env: >
-        TOOLCHAIN=gcc-5-pic-hid-sections
-        CONFIG=Release
-        INSTALL=--strip
+    # FIXME: Both gcc-5-pic-hid-sections-lto (w/ and w/o LTO) has frequent compiler crashes
+    # - os: linux
+    #   env: >
+    #     TOOLCHAIN=gcc-5-pic-hid-sections
+    #     CONFIG=Release
+    #     INSTALL=--strip
 
     - os: linux
       env: >
