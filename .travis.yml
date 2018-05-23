@@ -46,18 +46,12 @@ matrix:
         CONFIG=Release
         INSTALL=--strip
 
+    # Note: gcc-5-pic-hid-sections-lto (LTO) has frequent compiler crashes
     - os: linux
       env: >
-        TOOLCHAIN=gcc-5-pic-hid-sections-lto
+        TOOLCHAIN=gcc-5-pic-hid-sections
         CONFIG=Release
         INSTALL=--strip
-
-    # FIXME: gcc w/ lto is crashing -- possibly in the drishti GLPrinter (huge code generated font tables)
-#     - os: linux
-#       env: >
-#         TOOLCHAIN=gcc-5-pic-hid-sections-lto
-#         CONFIG=Release
-#         INSTALL=--strip
 
     - os: linux
       env: >
