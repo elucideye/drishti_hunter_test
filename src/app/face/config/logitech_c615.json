@@ -13,5 +13,5 @@
     "minTrackHits": 3,
     "multiFace": true,
     "regressorCropScale": 1.1,
-    "doCpuAcf": true
+    "doCpuAcf": false
 }
