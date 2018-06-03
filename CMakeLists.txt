@@ -47,8 +47,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-  URL "https://github.com/ruslo/hunter/archive/v0.21.15.tar.gz"
-  SHA1 "f52db0eb7c1663d4cdedbda82b61b23d5d6a75d9"
+  URL "https://github.com/ruslo/hunter/archive/v0.22.0.tar.gz"
+  SHA1 "f91a01c6e0eb53b1dc55a6442cd93580db91da07"
   LOCAL
   )
 
@@ -60,6 +60,11 @@ option(DRISHTI_SDK_TEST_OPENGL_ES3 "Support OpenGL ES 3.0 (default 2.0)" OFF)
 option(DRISHTI_SDK_TEST_DRISHTI_BUILD_SHARED_SDK "Build drishti as a shared library" ON)
 
 project(drishti-hunter-test VERSION 0.0.1)
+
+# Trigger Config-ID calculation. Git submodules archive creation will use
+# PROJECT_SOURCE_DIR as a root. If first 'hunter_add_package' will be called
+# in '3rdparty/*' directory then wrong git working directory will be picked.
+hunter_add_package(sugar)
 
 ######################
 ### RPATH defaults ###
